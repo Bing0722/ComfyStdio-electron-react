@@ -13,7 +13,7 @@ npm run dev
 
 运行 `npm run typecheck` 检查类型，运行 `npm run build` 构建桌面应用代码。
 
-`src/main/` 管理 Electron 窗口，`src/renderer/` 存放 React 界面。第一阶段是导入已有 ComfyUI 实例、启动和显示实时日志。随后接入代理和模型下载、模型管理与自定义节点安装。
+`src/main/` 管理 Electron 窗口，`src/renderer/` 存放 React 界面。当前阶段先完成卡片式界面，用模拟数据演示启动、模型下载与管理、ComfyUI 版本管理和插件操作。
 
 [协作规范](AGENTS.md) · [设计与验收](DESIGN.md)
 
