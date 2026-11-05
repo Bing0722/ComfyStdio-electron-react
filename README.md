@@ -15,4 +15,6 @@ npm run dev
 
 `src/main/` 管理 Electron 窗口，`src/renderer/` 存放 React 界面。第一阶段是导入已有 ComfyUI 实例、启动和显示实时日志。随后接入代理和模型下载、模型管理与自定义节点安装。
 
+[协作规范](AGENTS.md) · [设计与验收](DESIGN.md)
+
 [项目总览与验收场景](https://github.com/Bing0722/ComfyStdio)
