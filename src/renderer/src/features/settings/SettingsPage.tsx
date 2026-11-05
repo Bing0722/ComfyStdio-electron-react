@@ -1,3 +1,5 @@
+import { Switch } from '../../components/ui/Switch'
+import { Button } from '../../components/ui/Button'
 import { Section } from '../../components/ui/Section'
 import { Select } from '../../components/ui/Select'
 import { useFeedback } from '../../components/ui/FeedbackProvider'
@@ -25,17 +27,9 @@ export function SettingsPage() {
         <div className="setting-row">
           <div>
             <h3>液态效果</h3>
-            <p>侧栏与弹层使用轻微透明效果。</p>
+            <p>大面积透光玻璃、柔和折射与随光高光。</p>
           </div>
-          <button
-            role="switch"
-            aria-label="液态效果"
-            aria-checked={liquid}
-            className={`switch ${liquid ? 'on' : ''}`}
-            onClick={() => setLiquid(!liquid)}
-          >
-            <span />
-          </button>
+          <Switch checked={liquid} onChange={setLiquid} label="液态效果" />
         </div>
       </Section>
       <Section title="下载与网络">
@@ -84,12 +78,13 @@ export function SettingsPage() {
           <p className="footnote">
             支持 HTTP / HTTPS。当前仅演示配置与校验，不应用到实际网络。
           </p>
-          <button
+          <Button
+            type="submit"
             className="button-primary"
             disabled={!settings.directory.trim()}
           >
             保存配置
-          </button>
+          </Button>
         </form>
       </Section>
     </>

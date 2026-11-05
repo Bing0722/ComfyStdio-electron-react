@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui/Button'
 import { versionCatalog } from '../../state/demo-data'
 import { useCurrentInstance, useWorkspace } from '../../state/WorkspaceProvider'
 import { versionInUse } from '../../state/workspace-reducer'
@@ -30,7 +31,7 @@ export function VersionsPage() {
           <div className="row-actions">
             {installed ? (
               <>
-                <button
+                <Button
                   className="button-quiet"
                   disabled={state.defaultVersion === version}
                   onClick={() => {
@@ -39,8 +40,8 @@ export function VersionsPage() {
                   }}
                 >
                   设为默认
-                </button>
-                <button
+                </Button>
+                <Button
                   disabled={current.version === version}
                   onClick={() => {
                     if (['启动中', '运行中'].includes(current.status)) {
@@ -56,8 +57,8 @@ export function VersionsPage() {
                   }}
                 >
                   切换
-                </button>
-                <button
+                </Button>
+                <Button
                   className="button-quiet"
                   onClick={() =>
                     showDialog({
@@ -77,17 +78,17 @@ export function VersionsPage() {
                   }
                 >
                   卸载
-                </button>
+                </Button>
               </>
             ) : (
-              <button
+              <Button
                 onClick={() => {
                   dispatch({ type: 'version/install', version })
                   notify(`${version} 已安装（演示）`)
                 }}
               >
                 安装
-              </button>
+              </Button>
             )}
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { Surface } from './Surface'
 import type { ReactNode } from 'react'
 export function Section({
   title,
@@ -11,7 +12,7 @@ export function Section({
   children: ReactNode
 }) {
   return (
-    <section className="section">
+    <Surface className="section">
       <div className="section-heading">
         <h2>
           {title}
@@ -20,7 +21,7 @@ export function Section({
         {action}
       </div>
       {children}
-    </section>
+    </Surface>
   )
 }
 export function EmptyState({

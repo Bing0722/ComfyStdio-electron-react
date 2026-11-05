@@ -1,3 +1,6 @@
+import { Surface } from '../../components/ui/Surface'
+import { Collapse } from '../../components/motion/Collapse'
+import { Button } from '../../components/ui/Button'
 import { useState } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { Section, Status } from '../../components/ui/Section'
@@ -11,7 +14,7 @@ export function InstancesPage() {
   const busy = current.status === '启动中' || current.status === '运行中'
   return (
     <>
-      <section className="instance-focus" aria-label="当前实例">
+      <Surface className="instance-focus" aria-label="当前实例">
         <div className="instance-focus-heading">
           <div>
             <span className="subtle-label">当前实例</span>
@@ -24,7 +27,7 @@ export function InstancesPage() {
           <span className="muted">
             {current.version} <span className="separator">/</span> Python 3.12
           </span>
-          <button
+          <Button
             className="button-primary"
             onClick={() =>
               dispatch({
@@ -40,9 +43,9 @@ export function InstancesPage() {
               : current.status === '失败'
                 ? '重试启动'
                 : '启动 ComfyUI'}
-          </button>
+          </Button>
         </div>
-      </section>
+      </Surface>
       <Section title="实例" count={state.instances.length}>
         <div className="item-list">
           {state.instances.map((instance) => (
@@ -63,7 +66,7 @@ export function InstancesPage() {
                 </div>
               </div>
               <Status value={instance.status} />
-              <button
+              <Button
                 className="button-quiet"
                 disabled={instance.id === current.id}
                 onClick={() =>
@@ -71,7 +74,7 @@ export function InstancesPage() {
                 }
               >
                 {instance.id === current.id ? '已选择' : '选择'}
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -79,30 +82,31 @@ export function InstancesPage() {
       <Section
         title="运行日志"
         action={
-          <button
+          <Button
             className="button-quiet"
             aria-expanded={showLogs}
             onClick={() => setShowLogs(!showLogs)}
           >
             {showLogs ? '收起日志' : '展开日志'}
-          </button>
+          </Button>
         }
       >
-        {showLogs ? (
+        <Collapse open={showLogs}>
           <pre className="log-output" role="log" aria-label="实例日志">
             {current.logs.join('\n') || '等待启动实例。'}
           </pre>
-        ) : (
+        </Collapse>
+        <Collapse open={!showLogs}>
           <p className="section-hint">
             {current.status === '已停止'
               ? '启动后可查看运行记录。'
               : `${current.name} · ${current.status}`}
           </p>
-        )}
+        </Collapse>
       </Section>
       <details className="demo-tools">
         <summary>演示操作</summary>
-        <button
+        <Button
           onClick={() =>
             dispatch({
               type: 'instance/status',
@@ -112,7 +116,7 @@ export function InstancesPage() {
           }
         >
           模拟启动失败
-        </button>
+        </Button>
       </details>
     </>
   )

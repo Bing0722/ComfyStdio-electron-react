@@ -1,8 +1,6 @@
 .instance-focus {
-  border: 1px solid var(--border);
-  border-radius: 12px;
   padding: 25px 26px;
-  margin-bottom: 36px;
+  margin-bottom: 22px;
 }
 .instance-focus-heading,
 .instance-focus-footer {

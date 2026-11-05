@@ -22,7 +22,8 @@
   opacity: 0.9;
 }
 .section {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  padding: 20px 22px;
 }
 .section-heading {
   min-height: 36px;
@@ -30,7 +31,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-bottom: 10px;
+  padding-bottom: 13px;
   border-bottom: 1px solid var(--border);
 }
 .section-heading h2 {
@@ -183,9 +184,9 @@
   overflow: auto;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 4px;
-  box-shadow: 0 6px 20px #00000012;
+  border-radius: 12px;
+  padding: 5px;
+  box-shadow: 0 8px 30px #18263c1c;
 }
 .select-top .select-menu {
   top: auto;
@@ -244,14 +245,17 @@ dialog {
   width: 430px;
   max-width: calc(100vw - 40px);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 20px;
   background: var(--surface);
   color: var(--text);
   padding: 26px;
   box-shadow: 0 12px 60px #0002;
 }
 dialog::backdrop {
-  background: #0005;
+  background: #151b2d40;
+  backdrop-filter: blur(6px);
+  animation: backdrop-in 180ms ease-out;
+  transition: opacity 180ms ease;
 }
 dialog h2 {
   font-size: 17px;
@@ -269,24 +273,42 @@ dialog h2 {
   justify-content: flex-end;
   gap: 8px;
 }
-.toast {
+.toast-container {
   position: fixed;
   bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-  max-width: calc(100vw - 40px);
-  padding: 12px 18px;
+  inset-inline: 20px;
+  display: flex;
+  justify-content: center;
+  z-index: 80;
+  pointer-events: none;
+}
+.toast {
+  max-width: 520px;
+  padding: 13px 20px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--surface);
-  box-shadow: 0 6px 24px #0002;
+  box-shadow: 0 8px 30px #0002;
   font-size: 12px;
 }
-:root[data-liquid='true'] dialog,
-:root[data-liquid='true'] .select-menu {
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(18px);
+.modal-panel[data-exiting='true']::backdrop {
+  opacity: 0;
+}
+.collapse {
+  overflow: hidden;
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (max-width: 680px) {
+  .section {
+    padding: 17px;
+  }
 }
 @media (max-width: 760px) {
   .wrap-row {

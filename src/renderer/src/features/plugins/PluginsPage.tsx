@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui/Button'
 import { useState } from 'react'
 import { pluginCatalog } from '../../state/demo-data'
 import { useSessionFilter, useWorkspace } from '../../state/WorkspaceProvider'
@@ -52,23 +53,23 @@ export function PluginsPage() {
                 {plugin ? (
                   <>
                     {plugin.updateAvailable && (
-                      <button
+                      <Button
                         onClick={() => operate('plugin/update', item.name)}
                       >
                         更新
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
                       className="button-quiet"
                       onClick={() => operate('plugin/toggle', item.name)}
                     >
                       {plugin.enabled ? '禁用' : '启用'}
-                    </button>
+                    </Button>
                   </>
                 ) : (
-                  <button onClick={() => operate('plugin/install', item.name)}>
+                  <Button onClick={() => operate('plugin/install', item.name)}>
                     安装
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

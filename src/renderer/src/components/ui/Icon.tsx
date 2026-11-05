@@ -1,5 +1,9 @@
 import type { ReactNode } from 'react'
 export type IconName =
+  | 'glass'
+  | 'minimize'
+  | 'maximize'
+  | 'restore'
   | 'terminal'
   | 'download'
   | 'models'
@@ -15,6 +19,20 @@ export type IconName =
   | 'close'
   | 'sidebar'
 const paths: Record<IconName, ReactNode> = {
+  glass: (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="5" />
+      <path d="m8 12 4-4m-2 8 6-6" />
+    </>
+  ),
+  minimize: <path d="M5 12h14" />,
+  maximize: <rect x="5" y="5" width="14" height="14" rx="2" />,
+  restore: (
+    <>
+      <path d="M9 5h10v10" />
+      <rect x="5" y="9" width="10" height="10" rx="1" />
+    </>
+  ),
   terminal: (
     <>
       <rect x="3" y="4" width="18" height="16" rx="3" />

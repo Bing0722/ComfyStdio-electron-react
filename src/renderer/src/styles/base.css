@@ -6,7 +6,7 @@
 body {
   margin: 0;
   color: var(--text);
-  background: var(--surface);
+  background: var(--canvas);
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
 }
@@ -22,14 +22,15 @@ button {
   min-height: 32px;
   padding: 6px 12px;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: 9px;
   color: var(--text);
   background: var(--surface);
   cursor: pointer;
   white-space: nowrap;
   transition:
     background 140ms,
-    border-color 140ms;
+    border-color 140ms,
+    box-shadow 180ms;
   font-size: 12px;
 }
 button:hover:not(:disabled) {
@@ -54,7 +55,7 @@ button svg {
 input {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: 9px;
   padding: 9px 12px;
   min-width: 0;
   color: var(--text);

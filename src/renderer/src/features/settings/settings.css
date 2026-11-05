@@ -24,21 +24,20 @@
 .switch {
   display: block;
   padding: 3px;
-  width: 34px;
-  min-width: 34px;
-  height: 21px;
-  min-height: 21px;
+  width: 42px;
+  min-width: 42px;
+  height: 24px;
+  min-height: 24px;
   border-radius: 20px;
   background: var(--hover);
   border-color: var(--border);
 }
 .switch span {
   display: block;
-  height: 13px;
-  width: 13px;
+  height: 16px;
+  width: 16px;
   border-radius: 50%;
   background: var(--muted);
-  transition: transform 150ms;
 }
 .switch.on {
   background: var(--text);
@@ -46,7 +45,6 @@
 }
 .switch.on span {
   background: var(--surface);
-  transform: translateX(13px);
 }
 .settings-form {
   padding-top: 14px;

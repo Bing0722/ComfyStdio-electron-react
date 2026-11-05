@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui/Button'
 import { useSessionFilter, useWorkspace } from '../../state/WorkspaceProvider'
 import { useFeedback } from '../../components/ui/FeedbackProvider'
 import { EmptyState, Section } from '../../components/ui/Section'
@@ -21,7 +22,7 @@ export function ModelsPage() {
             models={models}
             actions={(model) => (
               <>
-                <button
+                <Button
                   className="button-quiet"
                   onClick={() =>
                     showDialog({
@@ -31,8 +32,8 @@ export function ModelsPage() {
                   }
                 >
                   详情
-                </button>
-                <button
+                </Button>
+                <Button
                   className="button-quiet"
                   onClick={() =>
                     showDialog({
@@ -48,7 +49,7 @@ export function ModelsPage() {
                   }
                 >
                   移除
-                </button>
+                </Button>
               </>
             )}
           />

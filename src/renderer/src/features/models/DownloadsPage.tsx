@@ -1,3 +1,4 @@
+import { Button } from '../../components/ui/Button'
 import { useSessionFilter, useWorkspace } from '../../state/WorkspaceProvider'
 import { modelCatalog } from '../../state/demo-data'
 import { Section } from '../../components/ui/Section'
@@ -16,14 +17,14 @@ export function DownloadsPage() {
         <ModelList
           models={filterModels(modelCatalog, filter)}
           actions={(model) => (
-            <button
+            <Button
               disabled={state.downloads.some((task) => task.id === model.id)}
               onClick={() => dispatch({ type: 'download/add', model })}
             >
               {state.downloads.some((task) => task.id === model.id)
                 ? '已加入'
                 : '下载'}
-            </button>
+            </Button>
           )}
         />
       </Section>

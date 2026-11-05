@@ -1,3 +1,6 @@
+import { AnimatePresence } from 'motion/react'
+import { Popover } from '../motion/Popover'
+import { Button } from './Button'
 import { useEffect, useId, useRef, useState } from 'react'
 import { Icon } from './Icon'
 
@@ -51,7 +54,7 @@ export function Select<T extends string>({
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
       }}
     >
-      <button
+      <Button
         ref={trigger}
         type="button"
         role="combobox"
@@ -97,26 +100,28 @@ export function Select<T extends string>({
         {icon && <Icon name="sun" />}
         <span>{value}</span>
         <Icon name="chevron" size={14} />
-      </button>
-      {open && (
-        <div id={id} role="listbox" aria-label={label} className="select-menu">
-          {options.map((option, index) => (
-            <div
-              key={option}
-              id={`${id}-${index}`}
-              role="option"
-              aria-selected={value === option}
-              className={index === active ? 'active' : ''}
-              onPointerMove={() => setActive(index)}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => select(index)}
-            >
-              <span>{option}</span>
-              {value === option && <Icon name="check" size={14} />}
-            </div>
-          ))}
-        </div>
-      )}
+      </Button>
+      <AnimatePresence>
+        {open && (
+          <Popover id={id} label={label} placement={placement}>
+            {options.map((option, index) => (
+              <div
+                key={option}
+                id={`${id}-${index}`}
+                role="option"
+                aria-selected={value === option}
+                className={index === active ? 'active' : ''}
+                onPointerMove={() => setActive(index)}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => select(index)}
+              >
+                <span>{option}</span>
+                {value === option && <Icon name="check" size={14} />}
+              </div>
+            ))}
+          </Popover>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

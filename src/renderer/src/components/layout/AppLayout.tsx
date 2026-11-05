@@ -1,8 +1,12 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { navigation } from '../../app/navigation'
 import type { PageId } from '../../state/types'
 import { Sidebar } from './Sidebar'
+import { TitleBar } from './TitleBar'
+import { PageTransition } from '../motion/PageTransition'
 import '../../styles/layout.css'
+import '../../styles/glass.css'
 export function AppLayout({
   page,
   onNavigate,
@@ -19,23 +23,30 @@ export function AppLayout({
   }, [page])
   return (
     <div className="app-shell">
-      <Sidebar page={page} onNavigate={onNavigate} />
-      <div className="workspace">
-        <header className="workspace-bar">
-          <span>{current.label}</span>
-          <span className="demo-label">演示模式</span>
-        </header>
-        <main ref={content} id="main-content">
-          <div className="page-content">
-            <header className="page-heading">
-              <h1>{current.label}</h1>
-              <p>{current.description}</p>
-            </header>
-            <div key={page} className="page-body">
-              {children}
-            </div>
-          </div>
-        </main>
+      <div className="ambient-backdrop" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <TitleBar
+        title={current.label}
+        onSettings={() => onNavigate('settings')}
+      />
+      <div className="shell-body">
+        <Sidebar page={page} onNavigate={onNavigate} />
+        <div className="workspace">
+          <motion.main layoutScroll ref={content} id="main-content">
+            <AnimatePresence initial={false} mode="popLayout">
+              <PageTransition key={page}>
+                <header className="page-heading">
+                  <h1>{current.label}</h1>
+                  <p>{current.description}</p>
+                </header>
+                <div className="page-body">{children}</div>
+              </PageTransition>
+            </AnimatePresence>
+          </motion.main>
+        </div>
       </div>
     </div>
   )

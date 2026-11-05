@@ -1,3 +1,4 @@
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 import type { Filter, Model } from '../../state/types'
 import { modelTypes } from '../../state/demo-data'
@@ -44,6 +45,7 @@ export function ModelList({
   models: Model[]
   actions: (model: Model) => ReactNode
 }) {
+  const reduce = useReducedMotion()
   if (!models.length)
     return (
       <EmptyState
@@ -53,18 +55,34 @@ export function ModelList({
     )
   return (
     <div className="item-list">
-      {models.map((model) => (
-        <div className="list-row model-row" key={model.id}>
-          <div className="row-content">
-            <div className="row-title">{model.name}</div>
-            <div className="row-description">
-              {model.type} · {model.source}
+      <AnimatePresence initial={false}>
+        {models.map((model) => (
+          <motion.div
+            layout="position"
+            className="list-row model-row"
+            key={model.id}
+            initial={{ opacity: 0, y: reduce ? 0 : 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{
+              opacity: 0,
+              height: 0,
+              paddingTop: 0,
+              paddingBottom: 0,
+              marginTop: 0,
+            }}
+            transition={reduce ? { duration: 0 } : undefined}
+          >
+            <div className="row-content">
+              <div className="row-title">{model.name}</div>
+              <div className="row-description">
+                {model.type} · {model.source}
+              </div>
             </div>
-          </div>
-          <span className="row-size">{model.size} GB</span>
-          <div className="row-actions">{actions(model)}</div>
-        </div>
-      ))}
+            <span className="row-size">{model.size} GB</span>
+            <div className="row-actions">{actions(model)}</div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   )
 }
