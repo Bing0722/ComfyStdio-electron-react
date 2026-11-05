@@ -1,0 +1,192 @@
+.app-shell {
+  height: 100dvh;
+  display: flex;
+  overflow: hidden;
+}
+.sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  padding: 24px 12px 14px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin-bottom: 34px;
+}
+.sidebar nav {
+  display: grid;
+  gap: 4px;
+}
+.nav-item {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 11px;
+  min-height: 38px;
+  border-color: transparent;
+  padding: 9px 12px;
+  font-size: 13px;
+  background: transparent;
+  border-radius: 7px;
+}
+.nav-item svg {
+  color: var(--muted);
+}
+.nav-item.selected {
+  background: var(--selected);
+}
+.nav-item.selected svg {
+  color: var(--text);
+}
+.nav-count {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 24px;
+  display: grid;
+  gap: 3px;
+}
+.sidebar-bottom .select > button {
+  border-color: transparent;
+  background: transparent;
+  justify-content: flex-start;
+  min-height: 38px;
+  padding-left: 12px;
+  gap: 11px;
+}
+.sidebar-bottom .select > button > svg:last-child {
+  margin-left: auto;
+}
+.sidebar-bottom .select > button > svg:first-child {
+  color: var(--muted);
+}
+.sidebar-version {
+  font-size: 10px;
+  color: var(--faint);
+  padding: 13px 12px 2px;
+}
+.workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.workspace-bar {
+  min-height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.demo-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.page-content {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 49px 40px 48px;
+}
+.page-heading {
+  margin-bottom: 31px;
+}
+.page-heading h1 {
+  font-size: 25px;
+  font-weight: 550;
+  letter-spacing: -0.7px;
+  margin-bottom: 9px;
+}
+.page-heading p {
+  font-size: 13px;
+}
+.page-body {
+  animation: appear 160ms ease-out;
+}
+:root[data-liquid='true'] .sidebar {
+  background: color-mix(in srgb, var(--sidebar) 86%, transparent);
+  backdrop-filter: blur(18px);
+}
+@keyframes appear {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (max-width: 900px) {
+  .sidebar {
+    width: 185px;
+  }
+  .page-content {
+    padding: 34px 26px;
+  }
+}
+@media (max-width: 640px) {
+  .sidebar {
+    width: 153px;
+    padding: 20px 8px 12px;
+  }
+  .brand {
+    font-size: 12px;
+    padding: 3px 6px;
+    gap: 7px;
+  }
+  .brand svg {
+    width: 17px;
+  }
+  .nav-item {
+    font-size: 12px;
+    gap: 8px;
+    padding: 8px;
+  }
+  .nav-item svg {
+    width: 16px;
+  }
+  .page-content {
+    padding: 28px 20px;
+  }
+  .workspace-bar {
+    padding: 0 20px;
+  }
+}
+@media (max-width: 480px) {
+  .sidebar {
+    width: 126px;
+  }
+  .nav-item {
+    font-size: 11px;
+    gap: 6px;
+  }
+  .brand svg {
+    display: none;
+  }
+  .sidebar-bottom .select > button {
+    padding: 8px 5px;
+    font-size: 11px;
+    gap: 6px;
+  }
+  .page-content {
+    padding: 24px 14px;
+  }
+}

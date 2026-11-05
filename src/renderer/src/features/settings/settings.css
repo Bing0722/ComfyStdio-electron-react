@@ -1,0 +1,78 @@
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 19px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child {
+  border-bottom: 0;
+}
+.setting-row h3 {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 6px;
+}
+.setting-row p {
+  font-size: 12px;
+  margin: 0;
+}
+.setting-row .select {
+  min-width: 130px;
+}
+.switch {
+  display: block;
+  padding: 3px;
+  width: 34px;
+  min-width: 34px;
+  height: 21px;
+  min-height: 21px;
+  border-radius: 20px;
+  background: var(--hover);
+  border-color: var(--border);
+}
+.switch span {
+  display: block;
+  height: 13px;
+  width: 13px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 150ms;
+}
+.switch.on {
+  background: var(--text);
+  border-color: var(--text);
+}
+.switch.on span {
+  background: var(--surface);
+  transform: translateX(13px);
+}
+.settings-form {
+  padding-top: 14px;
+}
+.settings-form > label {
+  display: block;
+  font-size: 13px;
+  margin: 20px 0 10px;
+}
+.settings-form > label:first-child {
+  margin-top: 0;
+}
+.settings-form > input {
+  width: 100%;
+}
+.settings-form > .setting-row {
+  margin-top: 12px;
+}
+.settings-form > button {
+  margin-top: 8px;
+}
+@media (max-width: 540px) {
+  .setting-row {
+    gap: 12px;
+  }
+  .setting-row .select {
+    min-width: 114px;
+  }
+}

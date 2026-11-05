@@ -1,0 +1,71 @@
+.row-size {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  margin: 0 12px;
+}
+.download-row {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+.download-row:last-child {
+  border-bottom: 0;
+}
+.download-heading,
+.download-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.download-heading h3 {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+.progress-label {
+  width: 36px;
+  text-align: right;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.download-footer {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+progress {
+  display: block;
+  width: 100%;
+  appearance: none;
+  height: 4px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--hover);
+}
+progress::-webkit-progress-bar {
+  background: var(--hover);
+}
+progress::-webkit-progress-value {
+  background: var(--text);
+  border-radius: 4px;
+  transition: width 300ms ease;
+}
+@media (max-width: 640px) {
+  .model-row {
+    flex-wrap: wrap;
+  }
+  .model-row .row-content {
+    flex-basis: 60%;
+  }
+  .model-row .row-actions {
+    margin-left: auto;
+  }
+  .row-size {
+    margin-right: 0;
+  }
+}

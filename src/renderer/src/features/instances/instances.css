@@ -1,0 +1,57 @@
+.instance-focus {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 25px 26px;
+  margin-bottom: 36px;
+}
+.instance-focus-heading,
+.instance-focus-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.instance-focus h2 {
+  font-size: 22px;
+  font-weight: 550;
+  margin: 9px 0 0;
+  letter-spacing: -0.5px;
+}
+.instance-path {
+  font-family: var(--mono);
+  font-size: 12px;
+  margin: 14px 0 27px;
+  overflow-wrap: anywhere;
+}
+.instance-focus-footer {
+  font-size: 12px;
+}
+.separator {
+  color: var(--faint);
+  padding: 0 7px;
+}
+.log-output {
+  background: var(--subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  margin: 0;
+  min-height: 110px;
+  max-height: 230px;
+  overflow: auto;
+  font: 12px/1.9 var(--mono);
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+@media (max-width: 640px) {
+  .instance-focus {
+    padding: 20px;
+  }
+  .instance-focus-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .instance-row .status {
+    display: none;
+  }
+}
