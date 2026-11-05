@@ -329,10 +329,4 @@ dialog h2 {
   .select {
     min-width: 0;
   }
-  .instance-row {
-    gap: 8px;
-  }
-  .instance-row > svg {
-    display: none;
-  }
 }

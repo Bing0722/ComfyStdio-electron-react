@@ -1,3 +1,4 @@
+import type { ComfyAPI } from '../shared/comfy-api'
 import { contextBridge, ipcRenderer } from 'electron'
 import type { WindowAPI, WindowState } from '../shared/window-api'
 
@@ -15,3 +16,9 @@ const windowAPI: WindowAPI = {
   },
 }
 contextBridge.exposeInMainWorld('windowControls', windowAPI)
+
+const comfyAPI: ComfyAPI = {
+  chooseAndRead: () => ipcRenderer.invoke('comfy:choose-and-read'),
+  readCurrent: () => ipcRenderer.invoke('comfy:read-current'),
+}
+contextBridge.exposeInMainWorld('comfy', comfyAPI)

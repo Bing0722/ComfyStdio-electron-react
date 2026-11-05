@@ -1,3 +1,4 @@
+import { registerComfyReader } from './comfy/register-comfy'
 import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import {
@@ -44,6 +45,7 @@ function createWindow(): void {
 void app.whenReady().then(() => {
   configureApplicationMenu()
   registerWindowControls()
+  registerComfyReader()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

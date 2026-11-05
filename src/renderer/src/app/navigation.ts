@@ -7,10 +7,10 @@ export const navigation: {
   description: string
 }[] = [
   {
-    id: 'instances',
+    id: 'launch',
     label: '启动',
     icon: 'terminal',
-    description: '选择实例，启动 ComfyUI。',
+    description: '读取并启动当前 ComfyUI。',
   },
   {
     id: 'downloads',
@@ -28,13 +28,13 @@ export const navigation: {
     id: 'versions',
     label: 'ComfyUI 版本',
     icon: 'versions',
-    description: '管理安装版本与实例使用的版本。',
+    description: '切换或更新当前 ComfyUI 的版本。',
   },
   {
     id: 'plugins',
     label: '插件',
     icon: 'plugins',
-    description: '管理当前实例的自定义节点。',
+    description: '读取当前 ComfyUI 的自定义节点。',
   },
   {
     id: 'settings',

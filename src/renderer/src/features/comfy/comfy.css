@@ -1,0 +1,136 @@
+.comfy-setup {
+  padding: 46px 32px;
+  text-align: center;
+}
+.setup-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 22px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--subtle);
+}
+.comfy-setup h2 {
+  font-size: 21px;
+  font-weight: 550;
+  margin-bottom: 12px;
+}
+.comfy-setup p {
+  font-size: 12px;
+}
+.setup-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 26px 0 18px;
+}
+.comfy-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 23px;
+}
+.comfy-context > div {
+  min-width: 0;
+}
+.comfy-context code {
+  display: block;
+  font: 11px/1.7 var(--mono);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  margin-top: 6px;
+}
+.comfy-launch {
+  padding: 25px;
+  margin-bottom: 22px;
+}
+.launch-heading,
+.launch-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.launch-heading h2 {
+  font-size: 25px;
+  font-weight: 550;
+  margin-top: 9px;
+}
+.launch-version {
+  margin: 17px 0 25px;
+  font: 13px var(--mono);
+}
+.launch-footer {
+  font-size: 12px;
+}
+.comfy-paths {
+  margin: 0;
+}
+.comfy-paths > div {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+.comfy-paths > div:last-child {
+  border: 0;
+}
+.comfy-paths dt {
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.comfy-paths dd {
+  margin: 0;
+  font: 11px/1.7 var(--mono);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.comfy-replace {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.comfy-replace p,
+.scan-warnings {
+  font-size: 11px;
+  color: var(--muted);
+}
+.scan-warnings {
+  margin: 0 0 20px;
+}
+.scan-warnings summary {
+  cursor: pointer;
+  padding-bottom: 8px;
+}
+.scan-warnings p {
+  overflow-wrap: anywhere;
+  margin-top: 6px;
+}
+.log-output {
+  background: var(--subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  min-height: 110px;
+  max-height: 230px;
+  overflow: auto;
+  font: 12px/1.9 var(--mono);
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+@media (max-width: 680px) {
+  .comfy-setup {
+    padding: 30px 20px;
+  }
+  .comfy-context {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .launch-footer {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}

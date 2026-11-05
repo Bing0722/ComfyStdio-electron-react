@@ -72,7 +72,11 @@ export function Sidebar({
             onChange={setTheme}
             placement="top"
           />
-          <span className="sidebar-version">本地演示 · 0.1</span>
+          <span className="sidebar-version">
+            {state.read.phase === 'ready'
+              ? `ComfyUI · ${state.comfy?.version}`
+              : 'ComfyUI 未读取'}
+          </span>
         </div>
       </aside>
     </LayoutGroup>

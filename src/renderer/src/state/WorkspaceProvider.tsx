@@ -3,21 +3,24 @@ import {
   useContext,
   useEffect,
   useReducer,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
 } from 'react'
-import { createWorkspace } from './demo-data'
-import { workspaceReducer } from './workspace-reducer'
+import { createDemoInstallation, createWorkspace } from './demo-data'
+import { contextLockReason, workspaceReducer } from './workspace-reducer'
 import type { Filter, PageId, WorkspaceAction, WorkspaceState } from './types'
-
+import type { ComfyReadResult } from '../../../shared/comfy-api'
 interface WorkspaceContextValue {
   state: WorkspaceState
   dispatch: Dispatch<WorkspaceAction>
   filters: Partial<Record<PageId, Filter>>
   updateFilter: (page: PageId, update: Partial<Filter>) => void
+  readComfy: (mode: 'choose' | 'refresh' | 'demo') => Promise<void>
+  readBlockedReason: string
 }
-const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
+const Context = createContext<WorkspaceContextValue | null>(null)
 const emptyFilter: Filter = { search: '', type: '全部类型' }
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(
@@ -26,6 +29,63 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     createWorkspace,
   )
   const [filters, setFilters] = useState<Partial<Record<PageId, Filter>>>({})
+  const requestId = useRef(0)
+  const reading = useRef(false)
+  const stateRef = useRef(state)
+  stateRef.current = state
+  const readComfy = async (mode: 'choose' | 'refresh' | 'demo') => {
+    if (reading.current || contextLockReason(stateRef.current)) return
+    const current = stateRef.current.comfy
+    reading.current = true
+    const id = ++requestId.current
+    dispatch({ type: 'comfy/read-start', requestId: id })
+    try {
+      let result: ComfyReadResult
+      if (
+        mode === 'demo' ||
+        (mode === 'refresh' && stateRef.current.comfy?.source === 'demo')
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 600))
+        result = {
+          status: 'ready',
+          installation:
+            mode === 'refresh' && current?.source === 'demo'
+              ? { ...current, readAt: new Date().toISOString() }
+              : createDemoInstallation(),
+        }
+      } else if (!window.comfy)
+        result = {
+          status: 'failed',
+          error: '目录读取需要在桌面应用中打开。也可以先读取演示环境。',
+        }
+      else
+        result = await (mode === 'choose'
+          ? window.comfy.chooseAndRead()
+          : window.comfy.readCurrent())
+      if (result.status === 'ready') {
+        dispatch({
+          type: 'comfy/read-success',
+          requestId: id,
+          installation: result.installation,
+        })
+        setFilters({})
+      } else if (result.status === 'failed')
+        dispatch({
+          type: 'comfy/read-failure',
+          requestId: id,
+          error: result.error,
+        })
+      else dispatch({ type: 'comfy/read-cancel', requestId: id })
+    } catch {
+      dispatch({
+        type: 'comfy/read-failure',
+        requestId: id,
+        error: '读取 ComfyUI 失败，请重试。',
+      })
+    } finally {
+      reading.current = false
+    }
+  }
   useEffect(() => {
     const timer = setInterval(() => dispatch({ type: 'tick' }), 1000)
     return () => clearInterval(timer)
@@ -36,21 +96,30 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       [page]: { ...(current[page] ?? emptyFilter), ...update },
     }))
   return (
-    <WorkspaceContext.Provider
-      value={{ state, dispatch, filters, updateFilter }}
+    <Context.Provider
+      value={{
+        state,
+        dispatch,
+        filters,
+        updateFilter,
+        readComfy,
+        readBlockedReason: contextLockReason(state),
+      }}
     >
       {children}
-    </WorkspaceContext.Provider>
+    </Context.Provider>
   )
 }
 export function useWorkspace() {
-  const context = useContext(WorkspaceContext)
-  if (!context) throw new Error('WorkspaceProvider is missing')
-  return context
+  const value = useContext(Context)
+  if (!value) throw new Error('WorkspaceProvider is missing')
+  return value
 }
-export function useCurrentInstance() {
+export function useComfy() {
   const { state } = useWorkspace()
-  return state.instances.find((instance) => instance.id === state.instanceId)!
+  if (!state.comfy || state.read.phase !== 'ready')
+    throw new Error('ComfyGate must be ready')
+  return state.comfy
 }
 export function useSessionFilter(page: PageId) {
   const { filters, updateFilter } = useWorkspace()

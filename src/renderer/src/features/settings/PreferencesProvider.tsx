@@ -9,7 +9,6 @@ import type { Theme } from '../../state/types'
 
 export const themes: Theme[] = ['浅色', '深色', '跟随系统']
 interface Settings {
-  directory: string
   proxy: string
   concurrency: string
 }
@@ -43,7 +42,6 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   })
   const [liquid, setLiquid] = useState(() => read('liquid', 'false') === 'true')
   const [settings, setSettings] = useState<Settings>({
-    directory: '/demo/ComfyUI/models',
     proxy: '',
     concurrency: '2 个任务',
   })

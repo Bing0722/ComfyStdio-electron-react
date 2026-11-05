@@ -78,7 +78,11 @@ export function ModelList({
                 {model.type} · {model.source}
               </div>
             </div>
-            <span className="row-size">{model.size} GB</span>
+            <span className="row-size">
+              {model.size >= 0.01
+                ? `${model.size.toFixed(2)} GB`
+                : `${(model.size * 1024).toFixed(2)} MB`}
+            </span>
             <div className="row-actions">{actions(model)}</div>
           </motion.div>
         ))}

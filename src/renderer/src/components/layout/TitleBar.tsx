@@ -1,3 +1,4 @@
+import { useWorkspace } from '../../state/WorkspaceProvider'
 import { useEffect, useState } from 'react'
 import type { WindowState } from '../../../../shared/window-api'
 import { usePreferences } from '../../features/settings/PreferencesProvider'
@@ -11,6 +12,7 @@ export function TitleBar({
   title: string
   onSettings: () => void
 }) {
+  const { state: workspace } = useWorkspace()
   const api = window.windowControls
   const [state, setState] = useState<WindowState>({
     maximized: false,
@@ -43,7 +45,11 @@ export function TitleBar({
         <span>{title}</span>
       </div>
       <div className="titlebar-actions">
-        <span className="demo-label">演示模式</span>
+        <span className="demo-label">
+          {workspace.comfy?.source === 'local'
+            ? '本地读取 · 操作演示'
+            : '演示模式'}
+        </span>
         <Button
           className={`titlebar-button ${liquid ? 'is-on' : ''}`}
           aria-label="切换液态玻璃"

@@ -1,3 +1,4 @@
+import { useWorkspace } from '../../state/WorkspaceProvider'
 import { Switch } from '../../components/ui/Switch'
 import { Button } from '../../components/ui/Button'
 import { Section } from '../../components/ui/Section'
@@ -8,6 +9,7 @@ import './settings.css'
 export function SettingsPage() {
   const { theme, setTheme, liquid, setLiquid, settings, updateSettings } =
     usePreferences()
+  const { state } = useWorkspace()
   const { notify } = useFeedback()
   return (
     <>
@@ -43,15 +45,17 @@ export function SettingsPage() {
           <label htmlFor="model-directory">模型目录</label>
           <input
             id="model-directory"
-            required
-            value={settings.directory}
-            onChange={(event) =>
-              updateSettings({ directory: event.target.value })
+            readOnly
+            value={
+              state.read.phase === 'ready'
+                ? (state.comfy?.modelsPath ?? '')
+                : ''
             }
+            placeholder="先在启动页读取 ComfyUI"
           />
-          {!settings.directory.trim() && (
-            <p className="error-text">请输入模型目录。</p>
-          )}
+          <p className="footnote">
+            目录由当前 ComfyUI 决定，更换程序后同步更新。
+          </p>
           <div className="setting-row">
             <div>
               <h3>并行下载</h3>
@@ -78,11 +82,7 @@ export function SettingsPage() {
           <p className="footnote">
             支持 HTTP / HTTPS。当前仅演示配置与校验，不应用到实际网络。
           </p>
-          <Button
-            type="submit"
-            className="button-primary"
-            disabled={!settings.directory.trim()}
-          >
+          <Button type="submit" className="button-primary">
             保存配置
           </Button>
         </form>

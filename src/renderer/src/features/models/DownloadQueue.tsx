@@ -11,7 +11,7 @@ export function DownloadQueue() {
   const { state, dispatch } = useWorkspace()
   const { showDialog } = useFeedback()
   return (
-    <Section title="下载队列" count={state.downloads.length}>
+    <Section title="下载队列（演示）" count={state.downloads.length}>
       {!state.downloads.length && (
         <p className="section-hint">还没有下载任务。</p>
       )}
@@ -39,6 +39,7 @@ export function DownloadQueue() {
                 <span className="progress-label">{task.progress}%</span>
               </div>
               <Progress label={`${task.name} 下载进度`} value={task.progress} />
+              <p className="row-description">目标：{task.targetPath}</p>
               <div className="download-footer">
                 <span className="row-description">
                   {((task.size * task.progress) / 100).toFixed(1)} / {task.size}{' '}

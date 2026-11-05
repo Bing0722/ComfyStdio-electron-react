@@ -2,97 +2,173 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   createWorkspace,
+  createDemoInstallation,
   modelCatalog,
 } from '../src/renderer/src/state/demo-data.ts'
-import { workspaceReducer as reduce } from '../src/renderer/src/state/workspace-reducer.ts'
-
+import {
+  workspaceReducer as reduce,
+  contextLockReason,
+} from '../src/renderer/src/state/workspace-reducer.ts'
 const tick = (state) => reduce(state, { type: 'tick' })
+const loaded = (installation = createDemoInstallation()) =>
+  reduce(
+    reduce(createWorkspace(), { type: 'comfy/read-start', requestId: 1 }),
+    { type: 'comfy/read-success', requestId: 1, installation },
+  )
 
-test('paused and failed downloads retain progress; completion adds one model', () => {
-  let state = reduce(createWorkspace(), {
-    type: 'download/add',
-    model: modelCatalog[0],
-  })
-  state = tick(tick(state))
-  assert.equal(state.downloads[0].progress, 5)
-  for (const phase of ['暂停', '失败']) {
-    state = reduce(state, { type: 'download/status', id: 1, phase })
-    state = tick(state)
-    assert.equal(state.downloads[0].progress, 5)
-  }
-  state = reduce(state, { type: 'download/status', id: 1, phase: '下载中' })
-  for (let count = 0; count < 25; count++) state = tick(state)
-  assert.equal(state.downloads[0].phase, '完成')
-  assert.equal(state.models.filter((model) => model.id === 1).length, 1)
-  state = reduce(state, { type: 'model/remove', id: 1 })
-  state = tick(state)
+test('no local inventory or business mutation exists before reading ComfyUI', () => {
+  const state = createWorkspace()
+  assert.equal(state.comfy, null)
+  for (const action of [
+    { type: 'download/add', model: modelCatalog[0] },
+    { type: 'plugin/install', name: 'node' },
+    { type: 'version/change', version: 'nightly', kind: 'switch' },
+    { type: 'runtime/status', status: '启动中' },
+  ])
+    assert.equal(reduce(state, action), state)
+})
+
+test('read failure clears the old inventory and stale read responses cannot overwrite current context', () => {
+  let state = reduce(loaded(), { type: 'comfy/read-start', requestId: 2 })
   assert.equal(
-    state.models.some((model) => model.id === 1),
+    reduce(state, {
+      type: 'comfy/read-success',
+      requestId: 1,
+      installation: createDemoInstallation(),
+    }),
+    state,
+  )
+  state = reduce(state, {
+    type: 'comfy/read-failure',
+    requestId: 2,
+    error: 'invalid directory',
+  })
+  assert.equal(state.comfy, null)
+  assert.equal(state.read.phase, 'failed')
+  assert.equal(
+    reduce(state, {
+      type: 'comfy/read-success',
+      requestId: 2,
+      installation: createDemoInstallation(),
+    }),
+    state,
+  )
+})
+
+test('cancelled folder selection preserves the current installation; successful replacement clears prior assets', () => {
+  const first = loaded()
+  let state = reduce(first, { type: 'comfy/read-start', requestId: 2 })
+  state = reduce(state, { type: 'comfy/read-cancel', requestId: 2 })
+  assert.equal(state.comfy, first.comfy)
+  state = reduce(state, { type: 'comfy/read-start', requestId: 3 })
+  state = reduce(state, {
+    type: 'comfy/read-success',
+    requestId: 3,
+    installation: {
+      ...createDemoInstallation(),
+      path: '/replacement/ComfyUI',
+      models: [],
+      plugins: {},
+    },
+  })
+  assert.deepEqual(state.comfy.models, [])
+  assert.deepEqual(state.comfy.plugins, {})
+  assert.equal(state.comfy.path, '/replacement/ComfyUI')
+})
+
+test('downloads belong to one root and retain progress through pause/failure; completion adds a model only to demo inventory', () => {
+  let state = reduce(loaded(), { type: 'download/add', model: modelCatalog[0] })
+  assert.equal(state.downloads[0].comfyPath, state.comfy.path)
+  assert.ok(
+    state.downloads[0].targetPath.startsWith(
+      state.comfy.modelsPath + '/checkpoints/',
+    ),
+  )
+  state = tick(tick(state))
+  for (const phase of ['暂停', '失败']) {
+    state = reduce(state, { type: 'download/status', id: 'flux-dev', phase })
+    assert.equal(tick(state).downloads[0].progress, 5)
+    assert.equal(
+      reduce(state, { type: 'comfy/read-start', requestId: 2 }),
+      state,
+    )
+  }
+  state = reduce(state, {
+    type: 'download/status',
+    id: 'flux-dev',
+    phase: '下载中',
+  })
+  for (let i = 0; i < 25; i++) state = tick(state)
+  assert.equal(
+    state.comfy.models.filter((model) => model.id === 'flux-dev').length,
+    1,
+  )
+  state = reduce(state, { type: 'model/remove', id: 'flux-dev' })
+  assert.equal(
+    tick(state).comfy.models.some((model) => model.id === 'flux-dev'),
     false,
   )
 })
 
-test('stopped and failed instances do not transition to running on the next tick', () => {
-  for (const status of ['已停止', '失败']) {
-    let state = reduce(createWorkspace(), {
-      type: 'instance/status',
-      id: 'studio',
-      status: '启动中',
-    })
-    state = reduce(state, { type: 'instance/status', id: 'studio', status })
-    assert.equal(tick(state).instances[0].status, status)
+test('version switch and update operate on the same program and preserve its inventory; busy operations are guarded', () => {
+  let state = loaded()
+  const models = state.comfy.models
+  const plugins = state.comfy.plugins
+  const root = state.comfy.path
+  state = reduce(state, { type: 'runtime/status', status: '启动中' })
+  assert.ok(contextLockReason(state))
+  assert.equal(
+    reduce(state, {
+      type: 'version/change',
+      version: 'v0.3.26',
+      kind: 'update',
+    }),
+    state,
+  )
+  state = reduce(state, { type: 'runtime/status', status: '已停止' })
+  assert.equal(tick(state).runtime.status, '已停止')
+  for (const [version, kind] of [
+    ['v0.3.26', 'update'],
+    ['nightly', 'switch'],
+  ]) {
+    state = reduce(state, { type: 'version/change', version, kind })
+    assert.equal(
+      reduce(state, { type: 'runtime/status', status: '启动中' }),
+      state,
+    )
+    state = tick(state)
+    assert.equal(state.comfy.version, version)
+    assert.equal(state.comfy.path, root)
+    assert.deepEqual(state.comfy.models, models)
+    assert.deepEqual(state.comfy.plugins, plugins)
   }
-  let state = reduce(createWorkspace(), {
-    type: 'instance/status',
-    id: 'studio',
-    status: '启动中',
-  })
-  state = reduce(state, { type: 'instance/select', id: 'lab' })
-  state = tick(state)
-  assert.equal(state.instanceId, 'lab')
-  assert.equal(state.instances[0].status, '运行中')
-  assert.equal(state.instances[1].status, '已停止')
 })
 
-test('versions in use cannot be removed; running instances cannot switch', () => {
-  let state = createWorkspace()
-  state = reduce(state, { type: 'version/remove', version: 'v0.3.26' })
-  assert.deepEqual(state.versions, ['v0.3.26'])
-  state = reduce(state, { type: 'version/install', version: 'v0.3.25' })
-  state = reduce(state, {
-    type: 'instance/status',
-    id: 'studio',
-    status: '启动中',
+test('local scan data is not modified by demo downloads, plugin operations, deletion, or version changes', () => {
+  let state = loaded({
+    ...createDemoInstallation(),
+    source: 'local',
+    models: [],
+    plugins: {},
   })
-  state = reduce(state, {
-    type: 'version/switch',
-    id: 'studio',
-    version: 'v0.3.25',
-  })
-  assert.equal(state.instances[0].version, 'v0.3.26')
-  state = reduce(state, {
-    type: 'instance/status',
-    id: 'studio',
-    status: '已停止',
-  })
-  state = reduce(state, {
-    type: 'version/switch',
-    id: 'studio',
-    version: 'v0.3.25',
-  })
-  assert.equal(state.instances[0].version, 'v0.3.25')
-  state = reduce(state, { type: 'version/remove', version: 'v0.3.25' })
-  assert.equal(state.versions.includes('v0.3.25'), true)
+  for (const action of [
+    { type: 'plugin/install', name: 'node' },
+    { type: 'version/change', version: 'nightly', kind: 'switch' },
+    { type: 'model/remove', id: 'sdxl-base' },
+  ])
+    assert.equal(reduce(state, action), state)
+  state = reduce(state, { type: 'download/add', model: modelCatalog[0] })
+  for (let i = 0; i < 25; i++) state = tick(state)
+  assert.equal(state.downloads[0].phase, '完成')
+  assert.deepEqual(state.comfy.models, [])
 })
 
-test('plugin toggle preserves update availability and instance isolation', () => {
-  let state = createWorkspace()
+test('plugin updates retain disabled status inside the current ComfyUI', () => {
+  let state = loaded()
   const name = 'ComfyUI Manager'
-  state = reduce(state, { type: 'plugin/toggle', instanceId: 'studio', name })
-  assert.equal(state.plugins.studio[name].enabled, false)
-  assert.equal(state.plugins.studio[name].updateAvailable, true)
-  state = reduce(state, { type: 'plugin/update', instanceId: 'studio', name })
-  assert.equal(state.plugins.studio[name].enabled, false)
-  assert.equal(state.plugins.studio[name].version, '1.1')
-  assert.deepEqual(state.plugins.lab, {})
+  state = reduce(state, { type: 'plugin/toggle', name })
+  assert.equal(state.comfy.plugins[name].updateAvailable, true)
+  state = reduce(state, { type: 'plugin/update', name })
+  assert.equal(state.comfy.plugins[name].enabled, false)
+  assert.equal(state.comfy.plugins[name].version, '1.1')
 })

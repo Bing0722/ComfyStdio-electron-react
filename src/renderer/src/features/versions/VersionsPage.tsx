@@ -1,116 +1,89 @@
 import { Button } from '../../components/ui/Button'
-import { versionCatalog } from '../../state/demo-data'
-import { useCurrentInstance, useWorkspace } from '../../state/WorkspaceProvider'
-import { versionInUse } from '../../state/workspace-reducer'
-import { useFeedback } from '../../components/ui/FeedbackProvider'
 import { Section } from '../../components/ui/Section'
-import { InstancePicker } from '../instances/InstancePicker'
+import { useFeedback } from '../../components/ui/FeedbackProvider'
+import { useComfy, useWorkspace } from '../../state/WorkspaceProvider'
+import { latestDemoVersion, versionCatalog } from '../../state/demo-data'
+import { ComfyContext } from '../comfy/ComfyContext'
 export function VersionsPage() {
-  const { state, dispatch } = useWorkspace()
-  const current = useCurrentInstance()
-  const { notify, showDialog } = useFeedback()
-  const renderVersions = (installed: boolean) =>
-    versionCatalog
-      .filter((item) => state.versions.includes(item.version) === installed)
-      .map(({ version, channel, date }) => (
-        <div className="list-row wrap-row" key={version}>
-          <div className="row-content">
-            <div className="row-title">
-              {version}
-              {state.defaultVersion === version && (
-                <span className="inline-note">默认</span>
-              )}
-              {current.version === version && (
-                <span className="inline-note">使用中</span>
-              )}
-            </div>
-            <div className="row-description">
-              {channel} · {date}
-            </div>
-          </div>
-          <div className="row-actions">
-            {installed ? (
-              <>
-                <Button
-                  className="button-quiet"
-                  disabled={state.defaultVersion === version}
-                  onClick={() => {
-                    dispatch({ type: 'version/default', version })
-                    notify('已设为默认版本（演示）')
-                  }}
-                >
-                  设为默认
-                </Button>
-                <Button
-                  disabled={current.version === version}
-                  onClick={() => {
-                    if (['启动中', '运行中'].includes(current.status)) {
-                      notify('请先停止当前实例，再切换版本')
-                      return
-                    }
-                    dispatch({
-                      type: 'version/switch',
-                      id: current.id,
-                      version,
-                    })
-                    notify('已切换实例版本（演示）')
-                  }}
-                >
-                  切换
-                </Button>
-                <Button
-                  className="button-quiet"
-                  onClick={() =>
-                    showDialog({
-                      title: `卸载 ${version}？`,
-                      text: '默认版本或实例正在使用的版本不可卸载。',
-                      confirmLabel: '卸载版本',
-                      danger: true,
-                      action: () => {
-                        if (versionInUse(state, version))
-                          notify('卸载失败：版本仍被使用，请先切换')
-                        else {
-                          dispatch({ type: 'version/remove', version })
-                          notify('已卸载版本（演示）')
-                        }
-                      },
-                    })
-                  }
-                >
-                  卸载
-                </Button>
-              </>
-            ) : (
-              <Button
-                onClick={() => {
-                  dispatch({ type: 'version/install', version })
-                  notify(`${version} 已安装（演示）`)
-                }}
-              >
-                安装
-              </Button>
-            )}
-          </div>
-        </div>
-      ))
+  const comfy = useComfy()
+  const { state, dispatch, readBlockedReason } = useWorkspace()
+  const { showDialog } = useFeedback()
+  const changeVersion = (version: string, kind: 'update' | 'switch') =>
+    showDialog({
+      title: `${kind === 'update' ? '更新' : '切换'}到 ${version}？`,
+      text: `当前目录：${comfy.path}\n仅变更这份 ComfyUI 的版本，模型和插件保留。\n本次为演示，不修改真实程序文件。`,
+      confirmLabel: kind === 'update' ? '演示更新' : '演示切换',
+      action: () => dispatch({ type: 'version/change', version, kind }),
+    })
   return (
     <>
-      <div className="toolbar">
-        <InstancePicker />
-        <span className="muted toolbar-note">当前版本 {current.version}</span>
-      </div>
-      <Section title="已安装" count={state.versions.length}>
-        <div className="item-list">{renderVersions(true)}</div>
+      <ComfyContext />
+      <Section title="当前版本">
+        <div className="list-row wrap-row">
+          <div className="row-content">
+            <div className="row-title">
+              {comfy.version}
+              <span className="inline-note">当前使用</span>
+            </div>
+            <p className="row-description">
+              {state.versionTask
+                ? `正在${state.versionTask.kind === 'update' ? '更新' : '切换'}到 ${state.versionTask.version}（演示）…`
+                : '一个 ComfyUI 目录，切换版本时保留模型与插件。'}
+            </p>
+          </div>
+          {comfy.source === 'demo' && (
+            <Button
+              className="button-primary"
+              disabled={
+                Boolean(readBlockedReason) ||
+                comfy.version === latestDemoVersion
+              }
+              onClick={() => changeVersion(latestDemoVersion, 'update')}
+            >
+              {comfy.version === latestDemoVersion
+                ? '已是演示最新版本'
+                : `更新到 ${latestDemoVersion}`}
+            </Button>
+          )}
+        </div>
       </Section>
-      <Section title="可用版本">
-        <div className="item-list">{renderVersions(false)}</div>
-        {state.versions.length === versionCatalog.length && (
-          <p className="section-hint">所有示例版本均已安装。</p>
-        )}
-      </Section>
-      <p className="footnote">
-        版本和发布日期为示例数据。默认版本用于后续新实例。
-      </p>
+      {comfy.source === 'demo' ? (
+        <>
+          <Section title="切换版本">
+            <div className="item-list">
+              {versionCatalog.map((item) => (
+                <div className="list-row" key={item.version}>
+                  <div className="row-content">
+                    <div className="row-title">{item.version}</div>
+                    <div className="row-description">
+                      {item.channel} · {item.date}
+                    </div>
+                  </div>
+                  <Button
+                    disabled={
+                      item.version === comfy.version ||
+                      Boolean(readBlockedReason)
+                    }
+                    onClick={() => changeVersion(item.version, 'switch')}
+                  >
+                    {item.version === comfy.version ? '使用中' : '切换'}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Section>
+          {readBlockedReason && <p className="footnote">{readBlockedReason}</p>}
+          <p className="footnote">
+            版本列表为演示数据；不会另外创建或安装第二份 ComfyUI。
+          </p>
+        </>
+      ) : (
+        <Section title="版本管理">
+          <p className="section-hint">
+            已读取本地版本。真实版本切换、远程更新和依赖安装尚未接入；当前不会修改这份程序。演示环境可预览完整切换与更新流程。
+          </p>
+        </Section>
+      )}
     </>
   )
 }
