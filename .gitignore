@@ -1,0 +1,14 @@
+.DS_Store
+
+# Local build output
+**/target/
+**/node_modules/
+**/build/
+**/dist/
+**/cmake-build-*/
+**/.venv/
+
+# Local credentials and settings
+.env
+.env.*
+!.env.example
