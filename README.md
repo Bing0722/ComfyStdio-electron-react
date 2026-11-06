@@ -1,6 +1,6 @@
 # ComfyStdio · Electron + React
 
-当前开发版本：**0.8.1**。基于 Electron、React、TypeScript 和 Motion 的 ComfyUI 桌面管理程序，采用固定液态玻璃界面，只展示真实程序和本地资产。
+当前开发版本：**0.8.2**。基于 Electron、React、TypeScript 和 Motion 的 ComfyUI 桌面管理程序，采用固定液态玻璃界面，只展示真实程序和本地资产。
 
 ## 文件夹便携版
 
@@ -32,17 +32,17 @@
 
 ## 本地开发
 
-使用 Node.js 22 LTS（至少 22.12）与 npm：
+使用 Node.js 22 LTS（至少 22.12）与 pnpm 10.28.0：
 
 ```sh
-npm ci
-npm run dev
-npm test
-npm run build
-npm run package:win
+pnpm install --frozen-lockfile
+pnpm run dev
+pnpm test
+pnpm run build
+pnpm run package:win
 ```
 
-`package:win` 生成 `release/ComfyStdio-0.8.1-win32-x64.zip`；`package:dir` 生成本机解包目录；`package` 生成本机 ZIP。开发模式的数据也在项目旁 `Data`，已被 Git 忽略。自动测试需要 Python 与本机临时端口。
+`package:win` 生成 `release/ComfyStdio-0.8.2-win32-x64.zip`；`package:dir` 生成本机解包目录；`package` 生成本机 ZIP。开发模式的数据也在项目旁 `Data`，已被 Git 忽略。自动测试需要 Python 与本机临时端口。
 
 `.github/workflows/portable.yml` 可手动生成各平台包；推送 `v*` 标签时在构建通过后发布 GitHub Release。普通 main 推送不会自动发布版本。
 

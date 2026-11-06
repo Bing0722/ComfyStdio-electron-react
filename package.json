@@ -1,16 +1,16 @@
 {
   "name": "comfystdio-electron-react",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "private": true,
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "typecheck": "tsc --noEmit",
-    "build": "npm run typecheck && electron-vite build",
+    "build": "pnpm run typecheck && electron-vite build",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
-    "package:win": "npm run build && electron-builder --win zip --x64 --publish never",
-    "package:dir": "npm run build && electron-builder --dir --publish never",
-    "package": "npm run build && electron-builder --publish never"
+    "package:win": "pnpm run build && electron-builder --win zip --x64 --publish never",
+    "package:dir": "pnpm run build && electron-builder --dir --publish never",
+    "package": "pnpm run build && electron-builder --publish never"
   },
   "engines": {
     "node": "^22.12.0 || >=24.0.0"
@@ -76,5 +76,12 @@
       "category": "Graphics",
       "artifactName": "ComfyStdio-${version}-linux-${arch}.${ext}"
     }
+  },
+  "packageManager": "pnpm@10.28.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
   }
 }
