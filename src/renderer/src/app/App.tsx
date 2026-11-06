@@ -1,3 +1,4 @@
+import { LogsPage } from '../features/logs/LogsPage'
 import { AboutPage } from '../features/about/AboutPage'
 import { useState } from 'react'
 import type { PageId } from '../state/types'
@@ -10,6 +11,7 @@ import { VersionsPage } from '../features/versions/VersionsPage'
 import { PluginsPage } from '../features/plugins/PluginsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
 const pages = {
+  logs: LogsPage,
   about: AboutPage,
   launch: LaunchPage,
   downloads: DownloadsPage,
@@ -23,7 +25,7 @@ export default function App() {
   const Page = pages[page]
   return (
     <AppLayout page={page} onNavigate={setPage}>
-      {page === 'settings' || page === 'about' ? (
+      {page === 'settings' || page === 'about' || page === 'logs' ? (
         <Page />
       ) : (
         <ComfyGate>

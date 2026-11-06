@@ -1,3 +1,4 @@
+import { registerRuntime } from '../runtime/register-runtime'
 import { join } from 'node:path'
 import { validateProxy } from '../../shared/proxy'
 import { acquireComfy } from './acquire'
@@ -15,6 +16,10 @@ export function registerComfyReader() {
   let currentPath: string | null = null
   let busy = false
   let acquisition: AbortController | null = null
+  const runtime = registerRuntime(
+    () => currentPath,
+    () => busy,
+  )
   const windowFor = (event: IpcMainInvokeEvent) => {
     if (event.senderFrame !== event.sender.mainFrame)
       throw new Error('Unsupported caller')
@@ -42,7 +47,7 @@ export function registerComfyReader() {
     'comfy:choose-and-read',
     async (event): Promise<ComfyReadResult> => {
       const window = windowFor(event)
-      if (busy)
+      if (busy || runtime.busy)
         return { status: 'failed', error: '正在读取 ComfyUI，请稍后重试。' }
       busy = true
       try {
@@ -62,7 +67,7 @@ export function registerComfyReader() {
     'comfy:acquire',
     async (event, proxy: unknown = ''): Promise<ComfyReadResult> => {
       const window = windowFor(event)
-      if (busy)
+      if (busy || runtime.busy)
         return { status: 'failed', error: '正在处理 ComfyUI，请稍后重试。' }
       busy = true
       const controller = new AbortController()
@@ -90,7 +95,7 @@ export function registerComfyReader() {
         const result = await scan(path)
         if (result.status === 'ready')
           result.installation.warnings.push(
-            '已获取官方程序源码；Python、PyTorch 和运行依赖尚未安装，启动仍为演示。',
+            '已获取官方程序源码；请先配置 Python、PyTorch 和运行依赖，再启动 ComfyUI。',
           )
         return result
       } catch (error) {
@@ -132,7 +137,7 @@ export function registerComfyReader() {
     async (event): Promise<ComfyReadResult> => {
       windowFor(event)
       if (!currentPath) return { status: 'cancelled' }
-      if (busy)
+      if (busy || runtime.busy)
         return { status: 'failed', error: '正在读取 ComfyUI，请稍后重试。' }
       busy = true
       try {

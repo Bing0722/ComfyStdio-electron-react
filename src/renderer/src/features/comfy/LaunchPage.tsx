@@ -1,18 +1,47 @@
 import { useState } from 'react'
+import type { RunMode } from '../../../../shared/runtime-api'
 import { Surface } from '../../components/ui/Surface'
 import { Button } from '../../components/ui/Button'
 import { Section, Status } from '../../components/ui/Section'
-import { Collapse } from '../../components/motion/Collapse'
-import { Icon } from '../../components/ui/Icon'
+import { Select } from '../../components/ui/Select'
 import { useComfy, useWorkspace } from '../../state/WorkspaceProvider'
 import { useFeedback } from '../../components/ui/FeedbackProvider'
 import { ComfyContext } from './ComfyContext'
 export function LaunchPage() {
   const comfy = useComfy()
-  const { state, dispatch, readComfy, readBlockedReason } = useWorkspace()
-  const { showDialog } = useFeedback()
-  const [showLogs, setShowLogs] = useState(false)
-  const busy = ['启动中', '运行中'].includes(state.runtime.status)
+  const { state, dispatch, readComfy, readBlockedReason, liveRuntime } =
+    useWorkspace()
+  const { showDialog, notify } = useFeedback()
+  const [mode, setMode] = useState<RunMode>('API 服务')
+  const [pending, setPending] = useState(false)
+  const [python, setPython] = useState('')
+  const status =
+    comfy.source === 'local' && liveRuntime.path === comfy.path
+      ? liveRuntime.status
+      : state.runtime.status
+  const running = ['启动中', '运行中', '停止中'].includes(status)
+  async function operate(action: 'start' | 'restart' | 'stop') {
+    if (comfy.source === 'demo') {
+      dispatch({
+        type: 'runtime/status',
+        status: action === 'stop' ? '已停止' : '启动中',
+      })
+      notify('演示环境运行状态已更新')
+      return
+    }
+    setPending(true)
+    try {
+      if (!window.runtime) throw new Error('请使用桌面应用')
+      if (action === 'stop') await window.runtime.stop()
+      else await window.runtime[action](mode)
+    } catch (error) {
+      notify(
+        error instanceof Error ? error.message : '操作失败，请查看运行日志',
+      )
+    } finally {
+      setPending(false)
+    }
+  }
   return (
     <>
       <ComfyContext />
@@ -22,33 +51,87 @@ export function LaunchPage() {
             <span className="subtle-label">当前程序</span>
             <h2>ComfyUI</h2>
           </div>
-          <Status value={state.runtime.status} />
+          <Status value={status} />
         </div>
         <p className="launch-version">
-          {comfy.version}
-          {state.versionTask && ' · 正在变更版本'}
+          {comfy.version} · {comfy.source === 'demo' ? '演示环境' : '本地程序'}
+        </p>
+        <div className="setting-row">
+          <div>
+            <h3>启动方式</h3>
+            <p>API 服务不自动打开浏览器；两种方式均提供本地 API。</p>
+          </div>
+          <Select
+            label="启动方式"
+            value={mode}
+            options={['API 服务', '打开网页']}
+            onChange={setMode}
+          />
+        </div>
+        <p className="footnote">
+          API 地址：http://127.0.0.1:8188 ·
+          仅监听本机。运行记录、警告和异常请查看侧栏“运行日志”。
         </p>
         <div className="launch-footer">
-          <span className="muted">启动操作为演示</span>
-          <Button
-            className="button-primary"
-            disabled={Boolean(state.versionTask)}
-            onClick={() =>
-              dispatch({
-                type: 'runtime/status',
-                status: busy ? '已停止' : '启动中',
-              })
-            }
-          >
-            <Icon name={busy ? 'stop' : 'play'} size={14} />
-            {busy
-              ? '停止演示'
-              : state.runtime.status === '失败'
-                ? '重试启动演示'
-                : '演示启动'}
-          </Button>
+          <span className="muted">
+            {comfy.source === 'demo'
+              ? '以下操作为演示'
+              : '使用当前程序的 Python 环境'}
+          </span>
+          <div className="row-actions">
+            <Button
+              className="button-primary"
+              disabled={pending || running || Boolean(state.versionTask)}
+              onClick={() => void operate('start')}
+            >
+              启动 ComfyUI
+            </Button>
+            <Button
+              disabled={
+                pending || status !== '运行中' || Boolean(state.versionTask)
+              }
+              onClick={() => void operate('restart')}
+            >
+              重启
+            </Button>
+            <Button
+              disabled={pending || !running || status === '停止中'}
+              onClick={() => void operate('stop')}
+            >
+              关闭 ComfyUI
+            </Button>
+          </div>
         </div>
       </Surface>
+      {comfy.source === 'local' && (
+        <Section
+          title="Python 环境"
+          action={
+            <Button
+              disabled={running || pending}
+              onClick={async () => {
+                try {
+                  const selected = await window.runtime?.choosePython()
+                  if (selected) setPython(selected)
+                } catch (error) {
+                  notify(String(error))
+                }
+              }}
+            >
+              选择 Python
+            </Button>
+          }
+        >
+          <p className="footnote">
+            {python ||
+              (liveRuntime.path === comfy.path ? liveRuntime.python : '') ||
+              '自动查找 .venv、venv、便携版 Python；未找到时使用系统 Python。'}
+          </p>
+          <p className="footnote">
+            所选环境需要已安装 ComfyUI 依赖。选择其他启动方式后，重启生效。
+          </p>
+        </Section>
+      )}
       <Section title="程序内容">
         <dl className="comfy-paths">
           <div>
@@ -60,43 +143,15 @@ export function LaunchPage() {
             <dd>{comfy.pluginsPath}</dd>
           </div>
         </dl>
-        <p className="footnote">
-          切换版本或更新针对同一份 ComfyUI，模型与插件继续归属于这个目录。
-        </p>
-      </Section>
-      <Section
-        title="运行日志"
-        action={
-          <Button
-            className="button-quiet"
-            aria-expanded={showLogs}
-            onClick={() => setShowLogs(!showLogs)}
-          >
-            {showLogs ? '收起日志' : '展开日志'}
-          </Button>
-        }
-      >
-        <Collapse open={showLogs}>
-          <pre className="log-output" role="log">
-            {state.runtime.logs.join('\n') || '等待启动演示。'}
-          </pre>
-        </Collapse>
-        <Collapse open={!showLogs}>
-          <p className="section-hint">
-            {state.runtime.status === '已停止'
-              ? '启动后可查看运行记录。'
-              : state.runtime.status}
-          </p>
-        </Collapse>
       </Section>
       <div className="comfy-replace">
         <Button
-          disabled={Boolean(readBlockedReason)}
+          disabled={Boolean(readBlockedReason) || pending}
           title={readBlockedReason}
           onClick={() =>
             showDialog({
               title: '更换当前 ComfyUI？',
-              text: '应用仍只管理一个 ComfyUI。选择并读取新目录后，模型、插件和版本信息将整体替换。',
+              text: '选择后会重新读取程序、模型和插件。',
               confirmLabel: '选择其他目录',
               action: () => void readComfy('choose'),
             })
@@ -106,15 +161,6 @@ export function LaunchPage() {
         </Button>
         {readBlockedReason && <p>{readBlockedReason}</p>}
       </div>
-      <details className="demo-tools">
-        <summary>演示操作</summary>
-        <Button
-          disabled={Boolean(state.versionTask)}
-          onClick={() => dispatch({ type: 'runtime/status', status: '失败' })}
-        >
-          模拟启动失败
-        </Button>
-      </details>
     </>
   )
 }

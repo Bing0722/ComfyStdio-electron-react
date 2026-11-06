@@ -99,11 +99,12 @@ export async function readInstallation(
         continue
       try {
         const info = await stat(path)
-        const category = relative(modelsPath, path).split(/[\\/]/)[0]
+        const parts = relative(modelsPath, path).split(/[\\/]/)
+        const category = parts[0]
         models.push({
           id: path,
           name: entry.name,
-          type: categories[category] ?? '其他',
+          type: categories[category] ?? (parts.length > 1 ? category : '其他'),
           size: info.size / 1024 ** 3,
           source: '本地文件',
           path,

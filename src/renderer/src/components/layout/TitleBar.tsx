@@ -47,7 +47,7 @@ export function TitleBar({
       <div className="titlebar-actions">
         <span className="demo-label">
           {workspace.comfy?.source === 'local'
-            ? '本地读取 · 操作演示'
+            ? '本地 ComfyUI'
             : '演示模式'}
         </span>
         <Button

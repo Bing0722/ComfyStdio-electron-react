@@ -172,3 +172,15 @@ test('plugin updates retain disabled status inside the current ComfyUI', () => {
   assert.equal(state.comfy.plugins[name].enabled, false)
   assert.equal(state.comfy.plugins[name].version, '1.1')
 })
+
+test('local process readiness comes only from main process events and stopping locks replacement', () => {
+ const installation={...createDemoInstallation(),source:'local'}
+ let state=loaded(installation)
+ state=reduce(state,{type:'runtime/live',status:'启动中'})
+ assert.equal(reduce(state,{type:'tick'}).runtime.status,'启动中')
+ assert.equal(reduce(state,{type:'runtime/status',status:'运行中'}).runtime.status,'启动中')
+ state=reduce(state,{type:'runtime/live',status:'停止中'})
+ assert(contextLockReason(state))
+ state=reduce(state,{type:'runtime/live',status:'已停止'})
+ assert.equal(contextLockReason(state),'')
+})

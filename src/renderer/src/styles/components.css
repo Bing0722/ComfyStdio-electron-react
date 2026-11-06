@@ -347,3 +347,64 @@ dialog h2 {
     transition: none;
   }
 }
+
+.sidebar .select > button {
+  width: 100%;
+  justify-content: flex-start;
+}
+.sidebar .select-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+.view-tabs .selected {
+  background: var(--text);
+  color: var(--surface);
+}
+.plugin-disabled {
+  border-left: 3px solid #b77822;
+  background: color-mix(in srgb, #b77822 9%, transparent);
+  padding-left: 14px;
+}
+.disabled-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #b77822;
+  font-size: 11px;
+  font-weight: 600;
+}
+.disabled-description {
+  font-size: 12px;
+  margin: 7px 0;
+}
+.runtime-log {
+  font-family: monospace;
+}
+.log-line {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.log-line > span {
+  font-size: 11px;
+  opacity: 0.7;
+}
+.log-line pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 6px 0 0;
+  font: inherit;
+}
+.log-警告 {
+  border-left: 3px solid #b77822;
+}
+.log-异常 {
+  border-left: 3px solid #d64b54;
+  background: color-mix(in srgb, #d64b54 6%, transparent);
+}

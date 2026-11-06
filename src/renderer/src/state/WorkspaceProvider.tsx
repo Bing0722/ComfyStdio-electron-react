@@ -1,3 +1,4 @@
+import type { RuntimeSnapshot } from '../../../shared/runtime-api'
 import { usePreferences } from '../features/settings/PreferencesProvider'
 import {
   createContext,
@@ -19,6 +20,7 @@ interface WorkspaceContextValue {
   filters: Partial<Record<PageId, Filter>>
   updateFilter: (page: PageId, update: Partial<Filter>) => void
   readComfy: (mode: 'choose' | 'refresh' | 'demo' | 'acquire') => Promise<void>
+  liveRuntime: RuntimeSnapshot
   acquiring: boolean
   readBlockedReason: string
 }
@@ -32,6 +34,29 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     createWorkspace,
   )
   const [filters, setFilters] = useState<Partial<Record<PageId, Filter>>>({})
+  const [liveRuntime, setLiveRuntime] = useState<RuntimeSnapshot>({
+    status: '已停止',
+    path: '',
+    python: '',
+    mode: 'API 服务',
+    logs: [],
+  })
+  useEffect(() => {
+    if (!window.runtime) return
+    let active = true
+    const receive = (snapshot: RuntimeSnapshot) => {
+      if (active) {
+        setLiveRuntime(snapshot)
+        dispatch({ type: 'runtime/live', status: snapshot.status })
+      }
+    }
+    const off = window.runtime.onChange(receive)
+    void window.runtime.snapshot().then(receive)
+    return () => {
+      active = false
+      off()
+    }
+  }, [])
   const [acquiring, setAcquiring] = useState(false)
   const requestId = useRef(0)
   const reading = useRef(false)
@@ -112,6 +137,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         updateFilter,
         readComfy,
         acquiring,
+        liveRuntime,
         readBlockedReason: contextLockReason(state),
       }}
     >

@@ -63,14 +63,25 @@ export function PluginsPage() {
         ) : (
           <div className="item-list">
             {installed.map((plugin) => (
-              <div className="list-row wrap-row" key={plugin.path}>
+              <div
+                className={`list-row wrap-row ${plugin.enabled ? '' : 'plugin-disabled'}`}
+                key={plugin.path}
+              >
                 <div className="row-content">
                   <div className="row-title">
                     {plugin.name}
+                    {!plugin.enabled && (
+                      <span className="disabled-badge">已禁用</span>
+                    )}
                     {plugin.updateAvailable && (
                       <span className="inline-note">可更新</span>
                     )}
                   </div>
+                  {!plugin.enabled && (
+                    <p className="disabled-description">
+                      此插件已禁用，不参与节点加载。
+                    </p>
+                  )}
                   <div className="row-description">
                     版本 {plugin.version} ·{' '}
                     {plugin.enabled

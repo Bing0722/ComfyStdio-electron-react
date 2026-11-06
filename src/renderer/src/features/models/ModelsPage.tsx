@@ -1,3 +1,5 @@
+import { ViewTabs } from '../../components/ui/ViewTabs'
+import { modelTypes } from '../../state/demo-data'
 import { Button } from '../../components/ui/Button'
 import {
   useComfy,
@@ -17,7 +19,21 @@ export function ModelsPage() {
   return (
     <>
       <ComfyContext />
-      <ModelFilters filter={filter} onChange={setFilter} />
+      <ViewTabs
+        label="模型分类"
+        value={filter.type}
+        options={[
+          ...new Set([
+            ...modelTypes,
+            ...comfy.models.map((model) => model.type),
+          ]),
+        ].map((type) => ({
+          value: type,
+          label: `${type} · ${comfy.models.filter((model) => type === '全部类型' || model.type === type).length}`,
+        }))}
+        onChange={(type) => setFilter({ type, search: '' })}
+      />
+      <ModelFilters filter={filter} onChange={setFilter} hideType />
       <Section
         title={comfy.source === 'local' ? '读取到的模型' : '当前模型（演示）'}
         count={models.length}

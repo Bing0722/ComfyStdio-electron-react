@@ -1,13 +1,14 @@
 import type { RuntimeStatus, WorkspaceAction, WorkspaceState } from './types'
 const logs: Record<RuntimeStatus, string> = {
   已停止: '服务已停止',
+  停止中: '正在停止服务',
   启动中: '正在准备运行环境…',
   运行中: '服务已就绪 · 127.0.0.1:8188',
   失败: '启动失败：示例端口被占用，请重试',
 }
 export function contextLockReason(state: WorkspaceState) {
   if (state.read.phase === 'reading') return '正在读取 ComfyUI，请稍后重试。'
-  if (['启动中', '运行中'].includes(state.runtime.status))
+  if (['启动中', '运行中', '停止中'].includes(state.runtime.status))
     return '请先停止 ComfyUI。'
   if (state.versionTask) return '请等待版本操作结束。'
   if (state.downloads.some((task) => task.phase !== '完成'))
@@ -108,7 +109,7 @@ export function workspaceReducer(
           ],
         },
         runtime:
-          state.runtime.status === '启动中'
+          state.runtime.status === '启动中' && comfy.source === 'demo'
             ? {
                 status: '运行中',
                 logs: [...state.runtime.logs, `[演示] ${logs.运行中}`].slice(
@@ -118,7 +119,11 @@ export function workspaceReducer(
             : state.runtime,
       }
     }
+    case 'runtime/live':
+      if (comfy.source !== 'local') return state
+      return { ...state, runtime: { ...state.runtime, status: action.status } }
     case 'runtime/status':
+      if (comfy.source !== 'demo') return state
       if (state.versionTask) return state
       return {
         ...state,

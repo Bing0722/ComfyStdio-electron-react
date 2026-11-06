@@ -18,8 +18,10 @@ export function filterModels(models: Model[], filter: Filter) {
 export function ModelFilters({
   filter,
   onChange,
+  hideType = false,
 }: {
   filter: Filter
+  hideType?: boolean
   onChange: (update: Partial<Filter>) => void
 }) {
   return (
@@ -29,12 +31,14 @@ export function ModelFilters({
         value={filter.search}
         onChange={(search) => onChange({ search })}
       />
-      <Select
-        label="模型类型"
-        value={filter.type}
-        options={modelTypes}
-        onChange={(type) => onChange({ type })}
-      />
+      {!hideType && (
+        <Select
+          label="模型类型"
+          value={filter.type}
+          options={modelTypes}
+          onChange={(type) => onChange({ type })}
+        />
+      )}
     </div>
   )
 }

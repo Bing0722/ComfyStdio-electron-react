@@ -19,6 +19,12 @@ export const navigation: {
     description: '读取并启动当前 ComfyUI。',
   },
   {
+    id: 'logs',
+    label: '运行日志',
+    icon: 'terminal',
+    description: '查看运行记录、警告和异常，导出日志用于排查。',
+  },
+  {
     id: 'downloads',
     label: '模型下载',
     icon: 'download',

@@ -60,3 +60,11 @@ src/
 ## 验证
 
 `npm test` 使用 Node 内置运行器验证纯状态转换，并在临时目录创建 ComfyUI 夹具验证真实扫描。夹具包含会抛异常的 Python 内容，扫描不执行它。`npm run build` 完成全项目类型检查与打包。桌面验收见 [设计文档](DESIGN.md)。
+
+## 真实进程与日志
+
+`main/runtime/service.ts` 持有唯一 Python 子进程并串行处理启动、重启和关闭；`register-runtime.ts` 限定当前根目录、原生 Python 选择与日志导出。固定启动参数为 `--listen 127.0.0.1 --port 8188 --disable-auto-launch`。API 模式不打开浏览器；`/system_stats` 响应后进入运行中，真实状态不受演示 tick 推进。主进程在读取和运行之间互锁。
+
+stdout/stderr 经 UTF-8 分块解码，按行记录时间、来源与启发式级别；最多保留 1000 条，每条 16000 字符。重启不清空日志。`WorkspaceProvider.liveRuntime` 跨页面订阅快照，日志页在没有当前程序时也能查看已有记录。Unix 通过进程组停止，Windows 使用本应用创建的固定 PID 调用 taskkill；超时强制停止，失败保留停止中状态。应用退出会停止其管理的进程。
+
+`ViewTabs` 为下载状态与模型分类提供按钮组。模型分类由常用类型与真实目录联合生成；未知目录保留自身名称。`PreferencesProvider` 现已持久化外观和模块代理配置。

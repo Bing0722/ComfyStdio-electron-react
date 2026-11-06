@@ -6,18 +6,22 @@ import { Section, Status } from '../../components/ui/Section'
 import { useFeedback } from '../../components/ui/FeedbackProvider'
 import './models.css'
 
-export function DownloadQueue() {
+export function DownloadQueue({ completed = false }: { completed?: boolean }) {
   const reduce = useReducedMotion()
   const { state, dispatch } = useWorkspace()
   const { showDialog } = useFeedback()
+  const tasks = state.downloads.filter((task) =>
+    completed ? task.phase === '完成' : task.phase !== '完成',
+  )
   return (
-    <Section title="下载队列（演示）" count={state.downloads.length}>
-      {!state.downloads.length && (
-        <p className="section-hint">还没有下载任务。</p>
-      )}
+    <Section
+      title={completed ? '已下载（演示记录）' : '正在下载（演示）'}
+      count={tasks.length}
+    >
+      {!tasks.length && <p className="section-hint">还没有下载任务。</p>}
       <div className="item-list">
         <AnimatePresence initial={false}>
-          {state.downloads.map((task) => (
+          {tasks.map((task) => (
             <motion.div
               layout="position"
               className="download-row"

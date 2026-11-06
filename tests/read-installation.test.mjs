@@ -75,3 +75,13 @@ test('reports extra model paths and skips symbolic-link cycles without executing
   )
   assert.deepEqual(result.models, [])
 })
+
+test('additional model folders keep their own category while root files remain other', async t => {
+ const { root } = await fixture(t)
+ await mkdir(join(root,'models','text_encoders'))
+ await writeFile(join(root,'models','text_encoders','encoder.safetensors'),'fixture')
+ await writeFile(join(root,'models','loose.safetensors'),'fixture')
+ const result=await readInstallation(root)
+ assert.equal(result.models.find(model=>model.name==='encoder.safetensors').type,'text_encoders')
+ assert.equal(result.models.find(model=>model.name==='loose.safetensors').type,'其他')
+})

@@ -7,8 +7,9 @@ export type PageId =
   | 'plugins'
   | 'settings'
   | 'about'
+  | 'logs'
 export type Theme = '浅色' | '深色' | '跟随系统'
-export type RuntimeStatus = '已停止' | '启动中' | '运行中' | '失败'
+export type RuntimeStatus = import('../../../shared/runtime-api').ProcessStatus
 export type DownloadPhase = '排队' | '下载中' | '暂停' | '完成' | '失败'
 export type {
   Model,
@@ -47,6 +48,7 @@ export type WorkspaceAction =
   | { type: 'comfy/read-cancel'; requestId: number }
   | { type: 'comfy/read-failure'; requestId: number; error: string }
   | { type: 'runtime/status'; status: RuntimeStatus }
+  | { type: 'runtime/live'; status: RuntimeStatus }
   | { type: 'download/add'; model: Model }
   | { type: 'download/status'; id: string; phase: '暂停' | '下载中' | '失败' }
   | { type: 'download/remove'; id: string }
