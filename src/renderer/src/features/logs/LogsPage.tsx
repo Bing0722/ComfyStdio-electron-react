@@ -9,15 +9,17 @@ export function LogsPage() {
   const { liveRuntime } = useWorkspace()
   const { notify } = useFeedback()
   const [level, setLevel] = useState('全部')
+  const [source, setSource] = useState('全部来源')
   const [query, setQuery] = useState('')
   const logs = liveRuntime.logs.filter(
     (log) =>
       (level === '全部' || log.level === level) &&
+      (source === '全部来源' || (source === '软件操作' ? log.source === '软件操作' : log.source !== '软件操作')) &&
       log.message.toLowerCase().includes(query.toLowerCase()),
   )
   return (
     <>
-      <div className="toolbar">
+      <div className="toolbar"><Select label="日志来源" value={source} options={['全部来源', '软件操作', 'ComfyUI']} onChange={setSource} />
         <SearchInput label="搜索日志内容…" value={query} onChange={setQuery} />
         <Select
           label="日志级别"

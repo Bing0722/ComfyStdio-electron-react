@@ -18,3 +18,6 @@
 .plugin-stars strong { font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .plugin-stars > span:last-child { font-size: 11px; color: var(--muted); }
 .plugin-repository { font-family: inherit; font-size: 13px; font-weight: 450; line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; }
+
+.plugin-install-progress { height: 62px; overflow: hidden; }
+.plugin-install-progress small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

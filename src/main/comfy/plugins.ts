@@ -24,6 +24,7 @@ export async function managePlugin(
   value: string,
   proxy: string,
   output: (text: string) => void = () => {},
+  trash?: (path: string) => Promise<void>,
 ) {
   const validated = validateProxy(proxy)
   const directory = join(root, 'custom_nodes')
@@ -56,6 +57,12 @@ export async function managePlugin(
   const info = await lstat(path)
   if (info.isSymbolicLink() || dirname(await realpath(path)) !== await realpath(directory))
     throw new Error('不支持修改目录外的插件。')
+  if (action === 'delete') {
+    if (!trash) throw new Error('回收站不可用')
+    await trash(path)
+    output('插件已移入回收站')
+    return
+  }
   if (action === 'dependencies') {
     if (!info.isDirectory()) throw new Error('单文件插件没有依赖清单。')
     const requirements = join(path, 'requirements.txt')

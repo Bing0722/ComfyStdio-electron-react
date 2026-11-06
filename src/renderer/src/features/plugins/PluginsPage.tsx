@@ -22,7 +22,7 @@ export function PluginsPage() {
   useEffect(() => window.comfy?.onPluginProgress(value => {
     if (value.url === installing) setInstallProgress(value.message.trim().split(/[\r\n]/).filter(Boolean).at(-1) || '正在下载…')
   }), [installing])
-  async function operate(action: 'install' | 'dependencies' | 'toggle', value: string) {
+  async function operate(action: 'install' | 'dependencies' | 'toggle' | 'delete', value: string) {
     if (busy) return
     setBusy(true)
     if (action === 'install') { setInstalling(value); setInstallProgress('准备下载…') }
@@ -31,9 +31,10 @@ export function PluginsPage() {
       await window.comfy!.managePlugin(action, value, settings.pluginProxy)
       if (action === 'install') setInstallProgress('正在刷新插件列表…')
       await readComfy('refresh')
-      notify(action === 'install' ? '插件文件安装成功，请按需安装依赖后启动 ComfyUI。' : '插件操作完成，下次启动生效。')
+      notify(action === 'delete' ? '插件已移入回收站，可重新安装。' : action === 'install' ? '插件文件安装成功，请按需安装依赖后启动 ComfyUI。' : '插件操作完成，下次启动生效。')
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error))
+      notify(`插件操作失败：${error instanceof Error ? error.message : String(error)}`)
     } finally {
       setBusy(false)
       setInstalling('')
@@ -93,6 +94,7 @@ export function PluginsPage() {
                   onClick={() => void operate('toggle', plugin.name)}>
                   {plugin.enabled ? '禁用' : '启用'}
                 </Button>
+                <Button className="button-danger" disabled={busy || !!readBlockedReason} onClick={() => showDialog({ title: `删除 ${plugin.name}？`, text: '将插件文件移入回收站。之后可从插件目录重新安装；插件内的配置也会一并移走。', confirmLabel: '删除插件', danger: true, action: () => void operate('delete', plugin.name) })}>删除</Button>
                 <Button
                   className="button-quiet"
                   onClick={() =>

@@ -222,9 +222,15 @@ export function registerComfyReader(portable: PortablePaths) {
     busy = true
     try {
       const connection = await modelConnection(proxy)
-      return await downloadModel(currentPath, model, url => connection.fetch(url, { signal: AbortSignal.timeout(3600000), credentials: 'omit' }), (received, total) => {
+      runtime.operationLog(`模型下载开始：${model.name}`)
+      const result = await downloadModel(currentPath, model, url => connection.fetch(url, { signal: AbortSignal.timeout(3600000), credentials: 'omit' }), (received, total) => {
         if (!event.sender.isDestroyed()) event.sender.send('comfy:progress', { kind: 'source', step: `模型下载：${model.name}`, received, total })
       })
+      runtime.operationLog(`模型下载完成：${model.name} · ${result}`)
+      return result
+    } catch (error) {
+      runtime.operationLog(`模型下载失败：${model.name} · ${error instanceof Error ? error.message : String(error)}`)
+      throw error
     } finally { busy = false }
   })
   ipcMain.handle('comfy:versions', async (event, action, tag = '', proxy = '') => {
@@ -244,7 +250,7 @@ export function registerComfyReader(portable: PortablePaths) {
     windowFor(event)
     if (busy || runtime.busy || !currentPath)
       throw new Error('请先读取 ComfyUI 并停止运行中的程序。')
-    if (!['install', 'dependencies', 'toggle'].includes(action) ||
+    if (!['install', 'dependencies', 'toggle', 'delete'].includes(action) ||
         typeof value !== 'string' || typeof proxy !== 'string')
       throw new Error('插件操作参数无效。')
     busy = true
@@ -255,10 +261,15 @@ export function registerComfyReader(portable: PortablePaths) {
     }
     app.on('before-quit', deferQuit)
     try {
+      runtime.operationLog(`插件操作开始：${action} ${value}`)
       await managePlugin(currentPath, runtime.selectedPython(currentPath), action, value, proxy, text => {
         runtime.pluginLog(text)
         if (action === 'install' && !event.sender.isDestroyed()) event.sender.send('comfy:plugin-progress', { url: value, message: text.slice(-2000) })
-      })
+      }, path => shell.trashItem(path))
+      runtime.operationLog(`插件操作完成：${action} ${value}`)
+    } catch (error) {
+      runtime.operationLog(`插件操作失败：${action} ${value} · ${error instanceof Error ? error.message : String(error)}`)
+      throw error
     } finally {
       busy = false
       app.removeListener('before-quit', deferQuit)

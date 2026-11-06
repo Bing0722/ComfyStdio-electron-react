@@ -1,3 +1,4 @@
+import { appendFileSync, statSync, renameSync, rmSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { existsSync, realpathSync } from 'node:fs'
 import { pythonSelections } from './python-selections'
@@ -117,9 +118,19 @@ export function registerRuntime(
         quitting = false
       })
   })
+  const operationLog = (message: string) => {
+    const clean = message.replace(/https?:\/\/[^\s]+/g, value => { try { const url = new URL(value); url.username = ''; url.password = ''; url.search = ''; return url.href } catch { return '[URL]' } })
+    service.log(clean, '软件操作')
+    try {
+      const file = join(portable.logs, 'ComfyStdio-operations.log')
+      if (existsSync(file) && statSync(file).size > 5 * 1024 ** 2) { rmSync(file + '.old', { force: true }); renameSync(file, file + '.old') }
+      appendFileSync(file, `${new Date().toISOString()} ${clean.slice(0, 16000)}\n`, 'utf8')
+    } catch { service.log('软件操作日志写入失败', '软件操作') }
+  }
   return {
+    operationLog,
     get busy() { return service.busy || choosing },
     selectedPython: selections.get,
-    pluginLog: (text: string) => service.log(text, '插件管理'),
+    pluginLog: operationLog,
   }
 }
