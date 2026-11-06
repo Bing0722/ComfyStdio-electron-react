@@ -1,3 +1,4 @@
+import { manageVersions } from './versions'
 import type { PortablePaths } from '../portable/paths'
 import { readCurrentPath, saveCurrentPath } from '../portable/state'
 import { existsSync } from 'node:fs'
@@ -166,6 +167,14 @@ export function registerComfyReader(portable: PortablePaths) {
       }
     },
   )
+  ipcMain.handle('comfy:versions', async (event, action, tag = '', proxy = '') => {
+    windowFor(event)
+    if (busy || runtime.busy || !currentPath) throw new Error('请先读取目录并停止 ComfyUI。')
+    if (typeof tag !== 'string' || typeof proxy !== 'string') throw new Error('参数无效。')
+    busy = true
+    try { return await manageVersions(currentPath, action, tag, proxy) }
+    finally { busy = false }
+  })
   ipcMain.handle('comfy:plugin', async (event, action, value, proxy) => {
     windowFor(event)
     if (busy || runtime.busy || !currentPath)
