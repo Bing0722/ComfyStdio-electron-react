@@ -354,22 +354,13 @@ dialog h2 {
   background: var(--text);
   color: var(--surface);
 }
-.plugin-disabled {
-  border-left: 3px solid #b77822;
-  background: color-mix(in srgb, #b77822 9%, transparent);
-  padding-left: 14px;
-}
 .disabled-badge {
   display: inline-block;
   padding: 3px 8px;
   border-radius: 6px;
-  border: 1px solid #b77822;
+  border: 1px solid #dc3545;
   font-size: 11px;
   font-weight: 600;
-}
-.disabled-description {
-  font-size: 12px;
-  margin: 7px 0;
 }
 .runtime-log {
   font-family: monospace;

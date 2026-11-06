@@ -62,7 +62,7 @@ export function PluginsPage() {
           <div className="item-list">
             {plugins.map((plugin) => (
               <div
-                className={`list-row wrap-row ${plugin.enabled ? '' : 'plugin-disabled'}`}
+                className="list-row wrap-row"
                 key={plugin.path}
               >
                 <div className="row-content">
@@ -72,14 +72,8 @@ export function PluginsPage() {
                       <span className="disabled-badge">已禁用</span>
                     )}
                   </div>
-                  {!plugin.enabled && (
-                    <p className="disabled-description">
-                      此插件已禁用，不参与节点加载。
-                    </p>
-                  )}
                   <div className="row-description">
-                    版本 {plugin.version} ·{' '}
-                    {plugin.enabled ? '未标记禁用' : '已禁用'}
+                    版本 {plugin.version}
                   </div>
                 </div>
                 <Button disabled={busy || !!readBlockedReason}
