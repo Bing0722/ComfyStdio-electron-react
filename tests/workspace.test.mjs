@@ -65,3 +65,16 @@ test('live process status locks reads without any timer driven readiness', () =>
   state = reduce(state, { type: 'runtime/live', status: '已停止' })
   assert.equal(contextLockReason(state), '')
 })
+
+test('refresh retains the loaded installation until replacement succeeds', () => {
+  let state = reduce(createWorkspace(), { type: 'comfy/read-start', requestId: 1 })
+  state = reduce(state, { type: 'comfy/read-success', requestId: 1, installation })
+  state = reduce(state, { type: 'comfy/read-start', requestId: 2 })
+  assert.equal(state.comfy, installation)
+  assert.equal(state.read.phase, 'reading')
+  assert(contextLockReason(state))
+  const refreshed = { ...installation, version: 'v2' }
+  state = reduce(state, { type: 'comfy/read-success', requestId: 2, installation: refreshed })
+  assert.equal(state.comfy, refreshed)
+  assert.equal(state.read.phase, 'ready')
+})

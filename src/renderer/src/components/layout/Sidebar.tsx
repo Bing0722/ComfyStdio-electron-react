@@ -78,7 +78,7 @@ export function Sidebar({
             placement="top"
           />
           <span className="sidebar-version">
-            {state.read.phase === 'ready'
+            {state.comfy
               ? `ComfyUI · ${state.comfy?.version}`
               : 'ComfyUI 未读取'}
           </span>

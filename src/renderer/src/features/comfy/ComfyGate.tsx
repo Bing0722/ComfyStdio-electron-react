@@ -7,7 +7,7 @@ import { AcquisitionButtons } from './AcquisitionButtons'
 import './comfy.css'
 export function ComfyGate({ children }: { children: ReactNode }) {
   const { state, readComfy, acquiring } = useWorkspace()
-  if (state.comfy && state.read.phase === 'ready') return children
+  if (state.comfy) return children
   const reading = state.read.phase === 'reading'
   const acquisitionTitle = {
     source: '正在获取 ComfyUI 源码',

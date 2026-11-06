@@ -59,7 +59,7 @@ export function AboutPage() {
             ['应用版本', report?.app ?? '检测中…'],
             [
               '当前 ComfyUI',
-              state.read.phase === 'ready'
+              state.comfy
                 ? `${state.comfy?.version} · 本地程序`
                 : '尚未读取',
             ],

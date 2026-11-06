@@ -114,7 +114,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           requestId: id,
           installation: result.installation,
         })
-        setFilters({})
+        if (stateRef.current.comfy?.path !== result.installation.path) setFilters({})
       } else if (result.status === 'failed')
         dispatch({
           type: 'comfy/read-failure',
@@ -170,7 +170,7 @@ export function useWorkspace() {
 }
 export function useComfy() {
   const { state } = useWorkspace()
-  if (!state.comfy || state.read.phase !== 'ready')
+  if (!state.comfy)
     throw new Error('ComfyGate must be ready')
   return state.comfy
 }

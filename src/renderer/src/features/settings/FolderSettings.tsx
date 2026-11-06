@@ -5,7 +5,7 @@ import { useFeedback } from '../../components/ui/FeedbackProvider'
 export function FolderSettings() {
   const { state, readComfy, readBlockedReason } = useWorkspace()
   const { notify, showDialog } = useFeedback()
-  const current = state.read.phase === 'ready' ? state.comfy : null
+  const current = state.comfy
   const select = () => void readComfy('choose')
   return (
     <Section title="文件夹管理">

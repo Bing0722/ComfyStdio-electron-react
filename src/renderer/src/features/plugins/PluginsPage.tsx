@@ -42,7 +42,7 @@ export function PluginsPage() {
         <Button disabled={busy || !!readBlockedReason || !repository.trim()}
           onClick={() => void operate('install', repository.trim())}>安装插件</Button>
         <p className="footnote">安装后点击插件的“安装依赖”，然后到启动页启动或重启 ComfyUI。依赖安装会执行插件提供的安装代码，请仅安装信任的插件。</p>
-        {busy && <p role="status">正在处理插件，详细输出可在运行日志查看…</p>}
+        <p role="status" style={{ visibility: busy ? 'visible' : 'hidden' }}>正在处理插件，详细输出可在运行日志查看…</p>
         {error && <pre className="log-output" role="alert">{error}</pre>}
       </Section>
       <div className="toolbar">

@@ -2,7 +2,7 @@ import { useComfy, useWorkspace } from '../../state/WorkspaceProvider'
 import { Button } from '../../components/ui/Button'
 export function ComfyContext() {
   const comfy = useComfy()
-  const { readComfy, readBlockedReason } = useWorkspace()
+  const { state, readComfy, readBlockedReason } = useWorkspace()
   return (
     <>
       <div className="comfy-context">
@@ -15,7 +15,7 @@ export function ComfyContext() {
           title={readBlockedReason || '重新读取版本、模型和插件'}
           onClick={() => void readComfy('refresh')}
         >
-          重新读取
+          {state.read.phase === 'reading' ? '读取中…' : '重新读取'}
         </Button>
       </div>
       {comfy.warnings.length > 0 && (
