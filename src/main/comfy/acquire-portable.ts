@@ -1,3 +1,4 @@
+import type { AcquisitionProgress } from '../../shared/comfy-api.ts'
 import { spawn } from 'node:child_process'
 import { lstat, mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
@@ -21,6 +22,7 @@ export async function acquirePortable(
   signal: AbortSignal,
   fetchOfficial: (url: string, options: RequestInit) => Promise<Response>,
   extract = extractPortable,
+  progress: (value: AcquisitionProgress) => void = () => {},
 ) {
   signal.throwIfAborted()
   if (await lstat(destination).catch((error) => {
@@ -33,6 +35,7 @@ export async function acquirePortable(
     return destination
   }
 
+  progress({ kind: 'portable', step: '查询官方版本' })
   const response = await fetchOfficial(releaseApi, {
     signal: AbortSignal.any([signal, AbortSignal.timeout(20_000)]),
     headers: { Accept: 'application/vnd.github+json' },
@@ -61,17 +64,27 @@ export async function acquirePortable(
   try {
     const archive = join(staging, archiveName)
     const downloadSignal = AbortSignal.any([signal, AbortSignal.timeout(60 * 60 * 1000)])
+    progress({ kind: 'portable', step: `下载 ${tag}`, received: 0, total: asset.size })
+    let lastProgress = 0
     const download = await fetchOfficial(asset.browser_download_url, {
       signal: downloadSignal,
     })
-    await saveVerifiedDownload(download, asset, archive, downloadSignal)
+    await saveVerifiedDownload(download, asset, archive, downloadSignal, (received, total) => {
+      if (Date.now() - lastProgress > 150 || received === total) {
+        lastProgress = Date.now()
+        progress({ kind: 'portable', step: `下载并校验 ${tag}`, received, total })
+      }
+    })
+    progress({ kind: 'portable', step: '校验通过，正在解压' })
 
     const unpacked = join(staging, 'unpacked')
     await mkdir(unpacked)
     await extract(archive, unpacked, signal)
     const portable = join(unpacked, basename(destination))
+    progress({ kind: 'portable', step: '检查文件与 Python' })
     await readPortable(portable)
     signal.throwIfAborted()
+    progress({ kind: 'portable', step: '保存便携版' })
     await rename(portable, destination)
     return destination
   } finally {

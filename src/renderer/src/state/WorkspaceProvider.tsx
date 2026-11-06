@@ -13,7 +13,7 @@ import {
 import { createWorkspace } from './initial-state'
 import { contextLockReason, workspaceReducer } from './workspace-reducer'
 import type { Filter, PageId, WorkspaceAction, WorkspaceState } from './types'
-import type { AcquisitionKind, ComfyReadResult } from '../../../shared/comfy-api'
+import type { AcquisitionProgress, AcquisitionKind, ComfyReadResult } from '../../../shared/comfy-api'
 type ReadMode = 'choose' | 'refresh' | AcquisitionKind
 type RuntimeAction = 'start' | 'restart' | 'stop' | 'choosePython'
 interface WorkspaceContextValue {
@@ -25,6 +25,7 @@ interface WorkspaceContextValue {
   operateRuntime: (action: RuntimeAction) => Promise<void>
   launchPending: boolean
   liveRuntime: RuntimeSnapshot
+  acquisitionProgress: Partial<Record<'source' | 'portable', AcquisitionProgress>>
   acquiring: AcquisitionKind | null
   readBlockedReason: string
 }
@@ -61,6 +62,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       off()
     }
   }, [])
+  const [acquisitionProgress, setAcquisitionProgress] = useState<Partial<Record<'source' | 'portable', AcquisitionProgress>>>({})
+  useEffect(() => window.comfy?.onAcquisitionProgress((value) => {
+    setAcquisitionProgress(current => ({ ...current, [value.kind]: value }))
+  }), [])
   const [acquiring, setAcquiring] = useState<AcquisitionKind | null>(null)
   const [launchPending, setLaunchPending] = useState(false)
   const operating = useRef(false)
@@ -89,6 +94,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     if (operating.current || reading.current || contextLockReason(stateRef.current)) return
     reading.current = true
     const acquisition = mode !== 'choose' && mode !== 'refresh' ? mode : null
+    setAcquisitionProgress({})
     setAcquiring(acquisition)
     const id = ++requestId.current
     dispatch({ type: 'comfy/read-start', requestId: id })
@@ -146,6 +152,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         updateFilter,
         readComfy,
         acquiring,
+        acquisitionProgress,
         liveRuntime,
         operateRuntime,
         launchPending,

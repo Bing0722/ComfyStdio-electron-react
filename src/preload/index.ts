@@ -24,6 +24,11 @@ contextBridge.exposeInMainWorld('device', {
   read: () => ipcRenderer.invoke('device:read'),
 })
 const comfyAPI: ComfyAPI = {
+  onAcquisitionProgress: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: Parameters<typeof callback>[0]) => callback(progress)
+    ipcRenderer.on('comfy:progress', listener)
+    return () => ipcRenderer.removeListener('comfy:progress', listener)
+  },
   managePlugin: (action, value, proxy) => ipcRenderer.invoke('comfy:plugin', action, value, proxy),
   acquire: (kind, proxy) => ipcRenderer.invoke('comfy:acquire', kind, proxy),
   openFolder: (kind) => ipcRenderer.invoke('comfy:open-folder', kind),

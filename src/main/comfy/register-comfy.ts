@@ -18,7 +18,7 @@ import {
   type IpcMainInvokeEvent,
 } from 'electron'
 import { readInstallation } from './read-installation'
-import type { ComfyReadResult } from '../../shared/comfy-api'
+import type { AcquisitionProgress, ComfyReadResult } from '../../shared/comfy-api'
 
 export function registerComfyReader(portable: PortablePaths) {
   const saved = readCurrentPath(portable)
@@ -106,10 +106,18 @@ export function registerComfyReader(portable: PortablePaths) {
       }
       window.on('close', cancelOnClose)
       try {
+        const report = (value: AcquisitionProgress) => {
+          if (!event.sender.isDestroyed()) event.sender.send('comfy:progress', value)
+        }
         const validated = validateProxy(proxy)
         const source = async () => {
+          report({ kind: 'source', step: '获取源码（Git）' })
           if (!existsSync(portable.comfy))
-            return acquireComfy(portable.root, controller.signal, undefined, validated)
+            {
+              const path = await acquireComfy(portable.root, controller.signal, undefined, validated)
+              report({ kind: 'source', step: '源码已获取' })
+              return path
+            }
           if (kind === 'both') await readInstallation(portable.comfy)
           return portable.comfy
         }
@@ -118,13 +126,15 @@ export function registerComfyReader(portable: PortablePaths) {
           await downloads.setProxy(
             validated
               ? { mode: 'fixed_servers', proxyRules: validated.replace(/^socks5h:/i, 'socks5:') }
-              : { mode: 'direct' },
+              : { mode: 'system' },
           )
           await downloads.closeAllConnections()
           return acquirePortable(
             portable.comfyPortable,
             controller.signal,
             (url, options) => downloads.fetch(url, { ...options, credentials: 'omit' }),
+            undefined,
+            report,
           )
         }
         let path: string
@@ -138,7 +148,8 @@ export function registerComfyReader(portable: PortablePaths) {
           path = portableResult.value
         } else path = await (kind === 'source' ? source() : standalone())
         if (controller.signal.aborted) return { status: 'cancelled' }
-        return await scan(path, controller.signal)
+        report({ kind: kind === 'source' ? 'source' : 'portable', step: '读取 ComfyUI 目录' })
+        return await scan(kind === 'source' ? path : join(path, 'ComfyUI'), controller.signal)
       } catch (error) {
         return controller.signal.aborted
           ? { status: 'cancelled' }

@@ -32,7 +32,14 @@ export type ComfyReadResult =
   | { status: 'cancelled' }
   | { status: 'failed'; error: string }
 export type AcquisitionKind = 'source' | 'portable' | 'both'
+export interface AcquisitionProgress {
+  kind: 'source' | 'portable'
+  step: string
+  received?: number
+  total?: number
+}
 export interface ComfyAPI {
+  onAcquisitionProgress: (callback: (progress: AcquisitionProgress) => void) => () => void
   managePlugin: (action: 'install' | 'dependencies' | 'toggle', value: string, proxy: string) => Promise<void>
   acquire: (kind: AcquisitionKind, proxy?: string) => Promise<ComfyReadResult>
   openFolder: (kind: 'program' | 'models' | 'plugins') => Promise<string>

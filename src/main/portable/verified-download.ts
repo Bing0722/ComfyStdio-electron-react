@@ -8,6 +8,7 @@ export async function saveVerifiedDownload(
   asset: { size: number; digest: string },
   file: string,
   signal?: AbortSignal,
+  onProgress?: (received: number, total: number) => void,
 ) {
   const partial = file + '.part'
   try {
@@ -22,6 +23,7 @@ export async function saveVerifiedDownload(
           callback(new Error('下载文件大小不符'))
           return
         }
+        onProgress?.(size, asset.size)
         hash.update(chunk)
         callback(null, chunk)
       },

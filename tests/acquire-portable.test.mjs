@@ -44,7 +44,13 @@ test('verified portable distribution installs beside source and reuses its embed
   await mkdir(join(root, 'ComfyUI'))
   const destination = join(root, folder)
   const signal = new AbortController().signal
-  assert.equal(await acquirePortable(destination, signal, fetchFixture(), extractFixture), destination)
+  const progress = []
+  assert.equal(await acquirePortable(destination, signal, fetchFixture(), extractFixture, value => progress.push(value)), destination)
+  assert.equal(progress[0].step, '查询官方版本')
+  const downloaded = progress.find(value => value.received === bytes.length)
+  assert.equal(downloaded.total, bytes.length)
+  assert(progress.some(value => value.step === '校验通过，正在解压'))
+  assert.equal(progress.at(-1).step, '保存便携版')
   assert.deepEqual((await readdir(root)).sort(), ['ComfyUI', folder])
   assert.equal(
     await findEmbeddedPython(join(destination, 'ComfyUI'), 'win32'),
