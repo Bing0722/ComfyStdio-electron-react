@@ -12,3 +12,9 @@
 .plugin-title-link:hover { text-decoration: underline; }
 .plugin-install-progress { display: grid; gap: 8px; overflow-wrap: anywhere; }
 .plugin-install-progress progress { width: 100%; }
+
+.plugin-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.plugin-stars { display: inline-flex; align-items: center; gap: 6px; color: var(--text); padding: 6px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--subtle); white-space: nowrap; }
+.plugin-stars strong { font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.plugin-stars > span:last-child { font-size: 11px; color: var(--muted); }
+.plugin-repository { font-family: inherit; font-size: 13px; font-weight: 450; line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; }

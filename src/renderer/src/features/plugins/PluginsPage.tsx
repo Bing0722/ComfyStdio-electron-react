@@ -31,8 +31,7 @@ export function PluginsPage() {
       await window.comfy!.managePlugin(action, value, settings.pluginProxy)
       if (action === 'install') setInstallProgress('正在刷新插件列表…')
       await readComfy('refresh')
-      if (action === 'install') showDialog({ title: '插件文件安装成功', text: '插件已保存到当前 ComfyUI。请按需安装依赖并重启 ComfyUI。' })
-      notify(action === 'install' ? '插件已下载，请安装依赖后启动 ComfyUI。' : '插件操作完成，下次启动生效。')
+      notify(action === 'install' ? '插件文件安装成功，请按需安装依赖后启动 ComfyUI。' : '插件操作完成，下次启动生效。')
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error))
     } finally {
