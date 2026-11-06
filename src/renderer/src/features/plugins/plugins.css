@@ -34,3 +34,7 @@
 .plugin-card-actions { padding-top: 12px; border-top: 1px solid var(--border); }
 .plugin-card-actions > button:last-child { margin-left: auto; }
 @media (max-width: 760px) { .section-heading:has(.plugin-batch-actions) { flex-wrap: wrap; gap: 12px; } .plugin-batch-actions { width: 100%; } }
+
+.plugin-installed-card .row-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; }
+.plugin-installed-card .disabled-badge { flex-shrink: 0; }
+.plugin-card-actions > button { min-width: 56px; }

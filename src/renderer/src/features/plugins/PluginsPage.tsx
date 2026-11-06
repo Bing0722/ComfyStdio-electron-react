@@ -1,3 +1,4 @@
+import { usePluginState, pluginState } from './plugin-state'
 import type { CatalogPlugin } from '../../../../shared/comfy-api'
 import { ViewTabs } from '../../components/ui/ViewTabs'
 import { PluginCatalog } from './PluginCatalog'
@@ -14,7 +15,7 @@ export function PluginsPage() {
   const comfy = useComfy(),
     { filter, setFilter } = useSessionFilter('plugins'),
     { showDialog, notify } = useFeedback()
-  const { readComfy, readBlockedReason } = useWorkspace()
+  const { readComfy, readBlockedReason, dispatch } = useWorkspace()
   const { settings } = usePreferences()
   const [catalog, setCatalog] = useState<CatalogPlugin[]>([])
   useEffect(() => {
@@ -26,18 +27,15 @@ export function PluginsPage() {
     const item = catalog.find(item => item.url.split('/').at(-1)?.replace(/\.git$/, '').toLowerCase() === name.replace(/\.disabled$/, '').toLowerCase())
     return item?.description || fallback.replace(/\s+/g, ' ').slice(0, 180)
   }
-  const [view, setView] = useState('已安装')
-  const [updates, setUpdates] = useState<Record<string, string>>({})
-  const [repository, setRepository] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const [installing, setInstalling] = useState('')
-  const [installProgress, setInstallProgress] = useState('')
-  useEffect(() => window.comfy?.onPluginProgress(value => {
-    if (value.url === installing) setInstallProgress(value.message.trim().split(/[\r\n]/).filter(Boolean).at(-1) || '正在下载…')
-  }), [installing])
+  const [view, setView] = usePluginState('view')
+  const [updates, setUpdates] = usePluginState('updates')
+  const [repository, setRepository] = usePluginState('repository')
+  const [busy, setBusy] = usePluginState('busy')
+  const [error, setError] = usePluginState('error')
+  const [installing, setInstalling] = usePluginState('installing')
+  const [installProgress, setInstallProgress] = usePluginState('installProgress')
   async function operate(action: 'install' | 'dependencies' | 'toggle' | 'delete' | 'check-update' | 'check-all' | 'update-all', value: string) {
-    if (busy) return
+    if (pluginState().busy) return
     setBusy(true)
     if (action === 'install') { setInstalling(value); setInstallProgress('准备下载…') }
     setError('')
@@ -58,7 +56,8 @@ export function PluginsPage() {
         return
       }
       if (action === 'install') setInstallProgress('正在刷新插件列表…')
-      await readComfy('refresh')
+      if (action === 'toggle') dispatch({ type: 'comfy/plugin-toggled', path: comfy.path, name: value })
+      else await readComfy('refresh')
       notify(action === 'delete' ? '插件已移入回收站，可重新安装。' : action === 'install' ? '插件文件安装成功，可在已安装页统一更新并安装依赖。' : '插件操作完成，下次启动生效。')
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error))
@@ -104,14 +103,12 @@ export function PluginsPage() {
             {plugins.map((plugin) => (
               <div
                 className="plugin-catalog-card plugin-installed-card"
-                key={plugin.path}
+                key={plugin.path.replace(/\.disabled$/, '')}
               >
                 <div className="row-content">
                   <div className="row-title">
-                    {plugin.name}
-                    {!plugin.enabled && (
-                      <span className="disabled-badge">已禁用</span>
-                    )}
+                    {plugin.name.replace(/\.disabled$/, '')}
+                    <span className="disabled-badge" style={{ visibility: plugin.enabled ? 'hidden' : 'visible' }}>已禁用</span>
                   </div>
                   <p className="installed-plugin-summary">{description(plugin.name, plugin.description)}</p>
                   <div className="row-description">

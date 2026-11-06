@@ -9,6 +9,15 @@ export function workspaceReducer(
   state: WorkspaceState,
   action: WorkspaceAction,
 ): WorkspaceState {
+  if (action.type === 'comfy/plugin-toggled') {
+    if (state.comfy?.path !== action.path) return state
+    const plugin = state.comfy.plugins[action.name]
+    if (!plugin) return state
+    const name = plugin.enabled ? plugin.name + '.disabled' : plugin.name.replace(/\.disabled$/, '')
+    const path = plugin.enabled ? plugin.path + '.disabled' : plugin.path.replace(/\.disabled$/, '')
+    const plugins = Object.fromEntries(Object.entries(state.comfy.plugins).map(([key, value]) => key === action.name ? [name, { ...plugin, name, path, enabled: !plugin.enabled }] : [key, value]))
+    return { ...state, comfy: { ...state.comfy, plugins } }
+  }
   if (action.type === 'comfy/python-selected') {
     if (state.comfy?.path !== action.path) return state
     return { ...state, comfy: { ...state.comfy, selectedPython: action.python } }

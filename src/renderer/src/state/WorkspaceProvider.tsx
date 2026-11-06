@@ -1,3 +1,4 @@
+import { pluginState, setPluginState } from '../features/plugins/plugin-state'
 import type { RuntimeSnapshot } from '../../../shared/runtime-api'
 import { usePreferences } from '../features/settings/PreferencesProvider'
 import {
@@ -33,6 +34,9 @@ const Context = createContext<WorkspaceContextValue | null>(null)
 const emptyFilter: Filter = { search: '', type: '全部类型' }
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { settings, runMode, portableCpu } = usePreferences()
+  useEffect(() => window.comfy?.onPluginProgress(value => {
+    if (value.url === pluginState().installing) setPluginState('installProgress', value.message.trim().split(/[\r\n]/).filter(Boolean).at(-1) || '正在处理…')
+  }), [])
   const [state, dispatch] = useReducer(
     workspaceReducer,
     undefined,

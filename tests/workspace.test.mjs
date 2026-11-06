@@ -78,3 +78,16 @@ test('refresh retains the loaded installation until replacement succeeds', () =>
   assert.equal(state.comfy, refreshed)
   assert.equal(state.read.phase, 'ready')
 })
+
+test('plugin toggle preserves unrelated data and does not enter loading state', () => {
+ const other = { name: 'other', path: '/test/ComfyUI/custom_nodes/other', enabled: true }
+ const plugin = { name: 'example', path: '/test/ComfyUI/custom_nodes/example', enabled: true }
+ const state = { ...createWorkspace(), comfy: { ...installation, plugins: { example: plugin, other } }, read: { phase: 'ready', requestId: 1, error: '' } }
+ const next = reduce(state, { type: 'comfy/plugin-toggled', path: installation.path, name: 'example' })
+ assert.equal(next.read, state.read)
+ assert.equal(next.comfy.models, state.comfy.models)
+ assert.equal(next.comfy.plugins.other, other)
+ assert.equal(next.comfy.plugins['example.disabled'].enabled, false)
+ const restored = reduce(next, { type: 'comfy/plugin-toggled', path: installation.path, name: 'example.disabled' })
+ assert.equal(restored.comfy.plugins.example.enabled, true)
+})

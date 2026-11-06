@@ -29,6 +29,7 @@ export interface WorkspaceState {
   runtime: { status: RuntimeStatus }
 }
 export type WorkspaceAction =
+  | { type: 'comfy/plugin-toggled'; path: string; name: string }
   | { type: 'comfy/read-start'; requestId: number }
   | {
       type: 'comfy/read-success'
