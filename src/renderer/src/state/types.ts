@@ -6,6 +6,7 @@ export type PageId =
   | 'versions'
   | 'plugins'
   | 'settings'
+  | 'about'
 export type Theme = '浅色' | '深色' | '跟随系统'
 export type RuntimeStatus = '已停止' | '启动中' | '运行中' | '失败'
 export type DownloadPhase = '排队' | '下载中' | '暂停' | '完成' | '失败'

@@ -4,5 +4,6 @@ declare global {
   interface Window {
     windowControls?: WindowAPI
     comfy?: ComfyAPI
+    device?: import('../../shared/device-api').DeviceAPI
   }
 }

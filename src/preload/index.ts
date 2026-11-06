@@ -17,7 +17,12 @@ const windowAPI: WindowAPI = {
 }
 contextBridge.exposeInMainWorld('windowControls', windowAPI)
 
+contextBridge.exposeInMainWorld('device', {
+  read: () => ipcRenderer.invoke('device:read'),
+})
 const comfyAPI: ComfyAPI = {
+  acquire: () => ipcRenderer.invoke('comfy:acquire'),
+  cancelAcquire: () => ipcRenderer.invoke('comfy:cancel-acquire'),
   chooseAndRead: () => ipcRenderer.invoke('comfy:choose-and-read'),
   readCurrent: () => ipcRenderer.invoke('comfy:read-current'),
 }

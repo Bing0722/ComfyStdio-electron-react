@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { Icon } from '../../components/ui/Icon'
 import './comfy.css'
 export function ComfyGate({ children }: { children: ReactNode }) {
-  const { state, readComfy } = useWorkspace()
+  const { state, readComfy, acquiring } = useWorkspace()
   if (state.comfy && state.read.phase === 'ready') return children
   const reading = state.read.phase === 'reading'
   return (
@@ -15,14 +15,18 @@ export function ComfyGate({ children }: { children: ReactNode }) {
       </span>
       <h2>
         {reading
-          ? '正在读取 ComfyUI'
+          ? acquiring
+            ? '正在获取 ComfyUI'
+            : '正在读取 ComfyUI'
           : state.read.phase === 'failed'
             ? '未能读取 ComfyUI'
             : '先读取你的 ComfyUI'}
       </h2>
       <p>
         {reading
-          ? '正在识别程序版本、模型和自定义节点。'
+          ? acquiring
+            ? '正在从官方仓库获取程序，网络较慢时可能需要几分钟。'
+            : '正在识别程序版本、模型和自定义节点。'
           : '一个工作目录，统一管理启动、版本、模型和插件。'}
       </p>
       {state.read.error && (
@@ -31,6 +35,14 @@ export function ComfyGate({ children }: { children: ReactNode }) {
         </p>
       )}
       <div className="setup-actions">
+        <Button disabled={reading} onClick={() => void readComfy('acquire')}>
+          获取 ComfyUI
+        </Button>
+        {acquiring && (
+          <Button onClick={() => void window.comfy?.cancelAcquire()}>
+            取消获取
+          </Button>
+        )}
         <Button
           className="button-primary"
           disabled={reading}
@@ -43,7 +55,9 @@ export function ComfyGate({ children }: { children: ReactNode }) {
         </Button>
       </div>
       <p className="footnote">
-        选择包含 main.py 的 ComfyUI 目录，也支持包含 ComfyUI 子目录的便携包。
+        获取需要 Git，将新建 ComfyUI
+        文件夹；仅获取源码，运行依赖需另行配置。已有程序可选择包含 main.py 的
+        ComfyUI 目录，也支持包含 ComfyUI 子目录的便携包。
       </p>
     </Surface>
   )

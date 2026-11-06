@@ -1,0 +1,32 @@
+.about-stack {
+  display: grid;
+  gap: 18px;
+}
+.device-facts {
+  margin: 8px 0;
+}
+.device-facts > div {
+  display: grid;
+  grid-template-columns: minmax(125px, 0.4fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+}
+.device-facts > div:last-child {
+  border-bottom: 0;
+}
+.device-facts dt {
+  opacity: 0.65;
+  font-size: 13px;
+}
+.device-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .device-facts > div {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

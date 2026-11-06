@@ -7,6 +7,12 @@ export const navigation: {
   description: string
 }[] = [
   {
+    id: 'about',
+    label: '关于',
+    icon: 'terminal',
+    description: '设备与 ComfyUI 运行环境信息。',
+  },
+  {
     id: 'launch',
     label: '启动',
     icon: 'terminal',

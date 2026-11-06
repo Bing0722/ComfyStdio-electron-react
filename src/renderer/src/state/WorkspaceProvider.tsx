@@ -17,7 +17,8 @@ interface WorkspaceContextValue {
   dispatch: Dispatch<WorkspaceAction>
   filters: Partial<Record<PageId, Filter>>
   updateFilter: (page: PageId, update: Partial<Filter>) => void
-  readComfy: (mode: 'choose' | 'refresh' | 'demo') => Promise<void>
+  readComfy: (mode: 'choose' | 'refresh' | 'demo' | 'acquire') => Promise<void>
+  acquiring: boolean
   readBlockedReason: string
 }
 const Context = createContext<WorkspaceContextValue | null>(null)
@@ -29,14 +30,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     createWorkspace,
   )
   const [filters, setFilters] = useState<Partial<Record<PageId, Filter>>>({})
+  const [acquiring, setAcquiring] = useState(false)
   const requestId = useRef(0)
   const reading = useRef(false)
   const stateRef = useRef(state)
   stateRef.current = state
-  const readComfy = async (mode: 'choose' | 'refresh' | 'demo') => {
+  const readComfy = async (mode: 'choose' | 'refresh' | 'demo' | 'acquire') => {
     if (reading.current || contextLockReason(stateRef.current)) return
     const current = stateRef.current.comfy
     reading.current = true
+    setAcquiring(mode === 'acquire')
     const id = ++requestId.current
     dispatch({ type: 'comfy/read-start', requestId: id })
     try {
@@ -59,9 +62,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           error: '目录读取需要在桌面应用中打开。也可以先读取演示环境。',
         }
       else
-        result = await (mode === 'choose'
-          ? window.comfy.chooseAndRead()
-          : window.comfy.readCurrent())
+        result = await (mode === 'acquire'
+          ? window.comfy.acquire()
+          : mode === 'choose'
+            ? window.comfy.chooseAndRead()
+            : window.comfy.readCurrent())
       if (result.status === 'ready') {
         dispatch({
           type: 'comfy/read-success',
@@ -84,6 +89,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       })
     } finally {
       reading.current = false
+      setAcquiring(false)
     }
   }
   useEffect(() => {
@@ -103,6 +109,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         filters,
         updateFilter,
         readComfy,
+        acquiring,
         readBlockedReason: contextLockReason(state),
       }}
     >

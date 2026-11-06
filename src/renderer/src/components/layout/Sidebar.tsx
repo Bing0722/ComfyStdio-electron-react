@@ -30,7 +30,7 @@ export function Sidebar({
         </div>
         <nav aria-label="主导航">
           {navigation
-            .filter((item) => item.id !== 'settings')
+            .filter((item) => item.id !== 'settings' && item.id !== 'about')
             .map((item) => (
               <Button
                 key={item.id}
@@ -53,6 +53,17 @@ export function Sidebar({
             ))}
         </nav>
         <div className="sidebar-bottom">
+          <Button
+            className={`nav-item ${page === 'about' ? 'selected' : ''}`}
+            aria-current={page === 'about' ? 'page' : undefined}
+            onClick={() => onNavigate('about')}
+          >
+            {page === 'about' && (
+              <motion.span layoutId="navigation-pill" className="nav-pill" />
+            )}
+            <Icon name="terminal" />
+            <span>关于</span>
+          </Button>
           <Button
             className={`nav-item ${page === 'settings' ? 'selected' : ''}`}
             aria-current={page === 'settings' ? 'page' : undefined}

@@ -30,6 +30,8 @@ export type ComfyReadResult =
   | { status: 'cancelled' }
   | { status: 'failed'; error: string }
 export interface ComfyAPI {
+  acquire: () => Promise<ComfyReadResult>
+  cancelAcquire: () => Promise<void>
   chooseAndRead: () => Promise<ComfyReadResult>
   readCurrent: () => Promise<ComfyReadResult>
 }
