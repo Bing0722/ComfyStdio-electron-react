@@ -58,7 +58,7 @@ function Dialog({
       data-exiting={!present}
       initial={{ opacity: 0, scale: reduce ? 1 : 0.97, y: reduce ? 0 : 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: reduce ? 1 : 0.98, y: reduce ? 0 : 6 }}
+      exit={{ opacity: 0, scale: reduce ? 1 : 0.98, y: reduce ? 0 : -6 }}
       transition={{ duration: reduce ? 0 : 0.2, ease: easeOut }}
       onCancel={(event) => {
         event.preventDefault()
@@ -129,11 +129,11 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
               className="toast"
               initial={{
                 opacity: 0,
-                y: reduce ? 0 : 12,
+                y: reduce ? 0 : -12,
                 scale: reduce ? 1 : 0.98,
               }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: reduce ? 0 : 6 }}
+              exit={{ opacity: 0, y: reduce ? 0 : -6 }}
               transition={{ duration: reduce ? 0 : 0.18, ease: easeOut }}
             >
               {notice.message}

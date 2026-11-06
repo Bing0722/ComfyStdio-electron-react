@@ -19,7 +19,17 @@ function createWindow(): void {
     show: false,
     backgroundColor: '#f3f4f6',
     titleBarStyle: 'hidden',
-    frame: isMac,
+    frame: isMac || process.platform === 'win32',
+    ...(process.platform === 'win32'
+      ? {
+          titleBarOverlay: {
+            color: '#00000000',
+            symbolColor: '#555b65',
+            height: 51,
+          },
+          backgroundMaterial: 'none' as const,
+        }
+      : {}),
     ...(isMac ? { trafficLightPosition: { x: 20, y: 19 } } : {}),
     autoHideMenuBar: true,
     webPreferences: {

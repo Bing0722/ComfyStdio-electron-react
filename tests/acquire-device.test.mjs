@@ -27,3 +27,12 @@ test('NVIDIA parser handles multiple cards and absent tools degrade gracefully',
  assert.deepEqual(parseNvidia(''), [])
  assert.equal(await command('comfystdio-nonexistent-test-tool', []), '')
 })
+
+test('independent acquisition proxy reaches the Git adapter and invalid proxy cannot create files', async () => {
+ const root = await mkdtemp(join(tmpdir(), 'comfy-proxy-'))
+ try {
+  await assert.rejects(acquireComfy(root, new AbortController().signal, async () => assert.fail('must not clone'), 'file:///tmp/proxy'))
+  await assert.rejects(access(join(root, 'ComfyUI')))
+  await acquireComfy(root, new AbortController().signal, async (_path, _signal, proxy) => assert.equal(proxy, 'socks5h://127.0.0.1:1080'), ' socks5h://127.0.0.1:1080 ')
+ } finally { await rm(root, { recursive: true, force: true }) }
+})

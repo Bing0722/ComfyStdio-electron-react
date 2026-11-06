@@ -68,7 +68,7 @@ export function TitleBar({
           <Icon name="settings" size={17} />
         </Button>
       </div>
-      {api && api.platform !== 'darwin' && (
+      {api && api.platform !== 'darwin' && api.platform !== 'win32' && (
         <div className="window-controls">
           <button aria-label="最小化窗口" onClick={() => api.minimize()}>
             <Icon name="minimize" size={14} />

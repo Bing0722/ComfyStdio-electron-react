@@ -4,6 +4,7 @@ export interface WindowState {
   focused: boolean
 }
 export interface WindowAPI {
+  setTheme: (dark: boolean) => void
   platform: string
   minimize: () => void
   toggleMaximize: () => void

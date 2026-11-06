@@ -275,7 +275,7 @@ dialog h2 {
 }
 .toast-container {
   position: fixed;
-  bottom: 24px;
+  top: 66px;
   inset-inline: 20px;
   display: flex;
   justify-content: center;
@@ -328,5 +328,22 @@ dialog h2 {
   }
   .select {
     min-width: 0;
+  }
+}
+
+.select-arrow {
+  display: inline-flex;
+  transition: transform 180ms ease;
+}
+.select-arrow.is-open {
+  transform: rotate(180deg);
+}
+.toast {
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .select-arrow {
+    transition: none;
   }
 }

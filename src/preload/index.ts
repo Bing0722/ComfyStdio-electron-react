@@ -4,6 +4,7 @@ import type { WindowAPI, WindowState } from '../shared/window-api'
 
 const windowAPI: WindowAPI = {
   platform: process.platform,
+  setTheme: (dark) => ipcRenderer.send('window:theme', dark),
   minimize: () => ipcRenderer.send('window:minimize'),
   toggleMaximize: () => ipcRenderer.send('window:toggle-maximize'),
   close: () => ipcRenderer.send('window:close'),
@@ -21,7 +22,8 @@ contextBridge.exposeInMainWorld('device', {
   read: () => ipcRenderer.invoke('device:read'),
 })
 const comfyAPI: ComfyAPI = {
-  acquire: () => ipcRenderer.invoke('comfy:acquire'),
+  acquire: (proxy) => ipcRenderer.invoke('comfy:acquire', proxy),
+  openFolder: (kind) => ipcRenderer.invoke('comfy:open-folder', kind),
   cancelAcquire: () => ipcRenderer.invoke('comfy:cancel-acquire'),
   chooseAndRead: () => ipcRenderer.invoke('comfy:choose-and-read'),
   readCurrent: () => ipcRenderer.invoke('comfy:read-current'),

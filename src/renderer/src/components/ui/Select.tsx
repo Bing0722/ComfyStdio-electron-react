@@ -99,7 +99,12 @@ export function Select<T extends string>({
       >
         {icon && <Icon name="sun" />}
         <span>{value}</span>
-        <Icon name="chevron" size={14} />
+        <span
+          className={`select-arrow ${open ? 'is-open' : ''}`}
+          aria-hidden="true"
+        >
+          <Icon name="chevron" size={14} />
+        </span>
       </Button>
       <AnimatePresence>
         {open && (

@@ -1,3 +1,4 @@
+import { usePreferences } from '../features/settings/PreferencesProvider'
 import {
   createContext,
   useContext,
@@ -24,6 +25,7 @@ interface WorkspaceContextValue {
 const Context = createContext<WorkspaceContextValue | null>(null)
 const emptyFilter: Filter = { search: '', type: '全部类型' }
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
+  const { settings } = usePreferences()
   const [state, dispatch] = useReducer(
     workspaceReducer,
     undefined,
@@ -63,7 +65,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         }
       else
         result = await (mode === 'acquire'
-          ? window.comfy.acquire()
+          ? window.comfy.acquire(settings.programProxy)
           : mode === 'choose'
             ? window.comfy.chooseAndRead()
             : window.comfy.readCurrent())

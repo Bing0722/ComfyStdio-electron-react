@@ -1,3 +1,4 @@
+import { validateProxy } from '../../shared/proxy.ts'
 import { execFile } from 'node:child_process'
 import { mkdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -5,13 +6,15 @@ export async function acquireComfy(
   parent: string,
   signal: AbortSignal,
   clone = cloneOfficial,
+  proxy = '',
 ) {
+  const validated = validateProxy(proxy)
   const destination = join(parent, 'ComfyUI')
   await mkdir(destination).catch(() => {
     throw new Error('目标位置已有 ComfyUI 或无法写入，请选择其他文件夹。')
   })
   try {
-    await clone(destination, signal)
+    await clone(destination, signal, validated)
     return destination
   } catch (error) {
     await rm(destination, { recursive: true, force: true })
@@ -21,11 +24,14 @@ export async function acquireComfy(
 function cloneOfficial(
   destination: string,
   signal: AbortSignal,
+  proxy: string,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = execFile(
       'git',
       [
+        '-c',
+        `http.proxy=${proxy}`,
         'clone',
         '--depth',
         '1',

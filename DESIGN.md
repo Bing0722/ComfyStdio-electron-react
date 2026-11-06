@@ -72,3 +72,13 @@
 - 按 [NVIDIA 官方定义](https://docs.nvidia.com/deploy/nvidia-smi/index.html)，`nvidia-smi` 的 CUDA Version 是驱动支持上限，与 `nvcc` 工具包分开展示；当前不检测 ComfyUI 虚拟环境/PyTorch。
 
 验收记录：`npm run build` 通过；`npm test` 13 项通过（新增目录保护、取消/失败清理、重试、多卡解析与缺失工具）。macOS 桌面实测未读取时进入关于、真实 Apple M4/内存/系统读取、取消目录选择、650px 无横向溢出；通过生产 IPC 从官方仓库真实克隆并自动读取版本/资产。NVIDIA 多卡使用夹具测试，Windows/Linux 和 NVIDIA 真机尚未实测。
+
+## 窗口与模块设置优化
+
+- Windows 改为原生 frame + hidden titleBar + Window Controls Overlay，移除重复的 HTML 窗口按钮，为原生按钮保留宽度，并同步主题图标颜色。保留系统缩放与最大化，不通过禁用 thickFrame 来牺牲边缘拖动。黑边原因仅依据截图推断，尚待 Windows 真机验证。参考 [Electron 窗口参数](https://www.electronjs.org/docs/latest/api/base-window)。
+- 主题下拉展开时箭头向上旋转，关闭后复位，保留向上弹出的侧栏菜单和键盘操作；减少动态效果时取消旋转过渡。
+- 设置分为外观、文件夹管理、模型下载、插件安装与更新、ComfyUI 获取与更新五张卡片。文件夹选择复用原生程序目录读取流程，替换前确认；取消保留当前上下文。三个“打开文件夹”只允许主进程解析当前程序对应目录，不接受任意路径。
+- 模型、插件、程序分别保存代理，支持 HTTP/HTTPS/SOCKS5/SOCKS5H，留空直连，拒绝无效协议、路径和账号密码。程序获取通过单次 Git `-c http.proxy` 生效，不修改全局配置；模型与插件操作仍为演示，代理仅保存待后续真实网络接入。并发下载偏好持久化，目前不改变演示任务调度。
+- 通知统一在标题栏下方、窗口水平中心淡入，长文本换行，不阻挡鼠标操作。
+
+验证：构建通过，15 项测试通过。macOS 桌面验证五张卡片、主题弹层方向与箭头、代理校验/独立保存/刷新恢复、原生目录选择后的真实扫描、限定目录打开、顶部居中通知、650px 窄窗口。真实 Git 使用不可连接的本机代理时正确失败且清理目录。Windows 原生标题栏、DPI 缩放、贴靠、边缘拖动、最大化/还原和黑边效果需 Windows 真机复验；不能以 macOS 检查代替。

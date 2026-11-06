@@ -74,3 +74,37 @@
     min-width: 114px;
   }
 }
+.settings-stack {
+  display: grid;
+  gap: 20px;
+}
+.folder-setting {
+  margin: 18px 0;
+}
+.folder-setting label {
+  display: block;
+  margin-bottom: 9px;
+}
+.folder-input {
+  display: flex;
+  gap: 10px;
+}
+.folder-input input {
+  flex: 1;
+  min-width: 0;
+}
+.folder-input button {
+  flex-shrink: 0;
+}
+@media (max-width: 700px) {
+  .folder-input {
+    flex-wrap: wrap;
+  }
+  .folder-input input {
+    flex-basis: 100%;
+  }
+  .setting-row {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}

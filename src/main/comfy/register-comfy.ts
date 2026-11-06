@@ -1,6 +1,9 @@
+import { join } from 'node:path'
+import { validateProxy } from '../../shared/proxy'
 import { acquireComfy } from './acquire'
 import {
   BrowserWindow,
+  shell,
   dialog,
   ipcMain,
   type IpcMainInvokeEvent,
@@ -55,42 +58,70 @@ export function registerComfyReader() {
       }
     },
   )
-  ipcMain.handle('comfy:acquire', async (event): Promise<ComfyReadResult> => {
-    const window = windowFor(event)
-    if (busy)
-      return { status: 'failed', error: '正在处理 ComfyUI，请稍后重试。' }
-    busy = true
-    const controller = new AbortController()
-    acquisition = controller
-    const cancel = () => controller.abort()
-    window.once('closed', cancel)
-    try {
-      const choice = await dialog.showOpenDialog(window, {
-        title: '选择存放位置（将新建 ComfyUI 文件夹）',
-        properties: ['openDirectory', 'createDirectory'],
-      })
-      if (choice.canceled || !choice.filePaths[0] || controller.signal.aborted)
-        return { status: 'cancelled' }
-      const path = await acquireComfy(choice.filePaths[0], controller.signal)
-      const result = await scan(path)
-      if (result.status === 'ready')
-        result.installation.warnings.push(
-          '已获取官方程序源码；Python、PyTorch 和运行依赖尚未安装，启动仍为演示。',
+  ipcMain.handle(
+    'comfy:acquire',
+    async (event, proxy: unknown = ''): Promise<ComfyReadResult> => {
+      const window = windowFor(event)
+      if (busy)
+        return { status: 'failed', error: '正在处理 ComfyUI，请稍后重试。' }
+      busy = true
+      const controller = new AbortController()
+      acquisition = controller
+      const cancel = () => controller.abort()
+      window.once('closed', cancel)
+      try {
+        const validated = validateProxy(proxy)
+        const choice = await dialog.showOpenDialog(window, {
+          title: '选择存放位置（将新建 ComfyUI 文件夹）',
+          properties: ['openDirectory', 'createDirectory'],
+        })
+        if (
+          choice.canceled ||
+          !choice.filePaths[0] ||
+          controller.signal.aborted
         )
-      return result
-    } catch (error) {
-      return controller.signal.aborted
-        ? { status: 'cancelled' }
-        : {
-            status: 'failed',
-            error:
-              error instanceof Error ? error.message : '获取失败，请重试。',
-          }
-    } finally {
-      window.removeListener('closed', cancel)
-      acquisition = null
-      busy = false
-    }
+          return { status: 'cancelled' }
+        const path = await acquireComfy(
+          choice.filePaths[0],
+          controller.signal,
+          undefined,
+          validated,
+        )
+        const result = await scan(path)
+        if (result.status === 'ready')
+          result.installation.warnings.push(
+            '已获取官方程序源码；Python、PyTorch 和运行依赖尚未安装，启动仍为演示。',
+          )
+        return result
+      } catch (error) {
+        return controller.signal.aborted
+          ? { status: 'cancelled' }
+          : {
+              status: 'failed',
+              error:
+                error instanceof Error ? error.message : '获取失败，请重试。',
+            }
+      } finally {
+        window.removeListener('closed', cancel)
+        acquisition = null
+        busy = false
+      }
+    },
+  )
+  ipcMain.handle('comfy:open-folder', async (event, kind: unknown) => {
+    windowFor(event)
+    if (
+      !currentPath ||
+      !['program', 'models', 'plugins'].includes(String(kind))
+    )
+      return '请先读取本地 ComfyUI'
+    const path =
+      kind === 'models'
+        ? join(currentPath, 'models')
+        : kind === 'plugins'
+          ? join(currentPath, 'custom_nodes')
+          : currentPath
+    return shell.openPath(path)
   })
   ipcMain.handle('comfy:cancel-acquire', (event) => {
     windowFor(event)

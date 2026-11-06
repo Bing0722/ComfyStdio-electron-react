@@ -256,3 +256,7 @@ main {
     display: none;
   }
 }
+
+.titlebar[data-platform='win32']:not([data-fullscreen='true']) {
+  padding-right: max(148px, calc(100vw - env(titlebar-area-width, 100vw)));
+}

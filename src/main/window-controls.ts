@@ -18,6 +18,13 @@ export function getWindowState(window: BrowserWindow): WindowState {
   }
 }
 export function registerWindowControls() {
+  ipcMain.on('window:theme', (event, dark: unknown) => {
+    if (process.platform === 'win32' && typeof dark === 'boolean')
+      senderWindow(event)?.setTitleBarOverlay({
+        color: '#00000000',
+        symbolColor: dark ? '#e5e7eb' : '#555b65',
+      })
+  })
   ipcMain.on('window:minimize', (event) => senderWindow(event)?.minimize())
   ipcMain.on('window:toggle-maximize', (event) => {
     const window = senderWindow(event)

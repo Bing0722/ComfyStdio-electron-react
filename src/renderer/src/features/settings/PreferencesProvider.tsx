@@ -9,7 +9,9 @@ import type { Theme } from '../../state/types'
 
 export const themes: Theme[] = ['浅色', '深色', '跟随系统']
 interface Settings {
-  proxy: string
+  modelProxy: string
+  pluginProxy: string
+  programProxy: string
   concurrency: string
 }
 interface Preferences {
@@ -42,8 +44,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   })
   const [liquid, setLiquid] = useState(() => read('liquid', 'false') === 'true')
   const [settings, setSettings] = useState<Settings>({
-    proxy: '',
-    concurrency: '2 个任务',
+    modelProxy: read('modelProxy', ''),
+    pluginProxy: read('pluginProxy', ''),
+    programProxy: read('programProxy', ''),
+    concurrency: read('concurrency', '2 个任务'),
   })
   useEffect(() => {
     const media = matchMedia('(prefers-color-scheme: dark)')
@@ -52,6 +56,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         theme === '深色' || (theme === '跟随系统' && media.matches)
           ? 'dark'
           : 'light'
+      window.windowControls?.setTheme(
+        document.documentElement.dataset.theme === 'dark',
+      )
     }
     apply()
     media.addEventListener('change', apply)
@@ -71,7 +78,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         setLiquid,
         settings,
         updateSettings: (update) =>
-          setSettings((current) => ({ ...current, ...update })),
+          setSettings((current) => {
+            for (const [key, value] of Object.entries(update)) save(key, value)
+            return { ...current, ...update }
+          }),
       }}
     >
       {children}
