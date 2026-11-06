@@ -1,3 +1,4 @@
+import { cachedVersions, loadVersions, saveVersions } from './version-cache'
 import { useEffect, useRef, useState } from 'react'
 import type { VersionStatus } from '../../../../shared/comfy-api'
 import { Section } from '../../components/ui/Section'
@@ -17,7 +18,7 @@ export function VersionsPage() {
   const comfy = useComfy()
   const { readComfy, readBlockedReason } = useWorkspace()
   const { settings } = usePreferences()
-  const [status, setStatus] = useState<VersionStatus>()
+  const [status, setStatus] = useState<VersionStatus | undefined>(() => cachedVersions(comfy.path)?.value)
   const [pending, setPending] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -26,10 +27,16 @@ export function VersionsPage() {
   const request = useRef(0)
   useEffect(() => {
     const id = ++request.current
-    setStatus(undefined); setSelected(''); setError(''); setNotice('')
-    window.comfy!.versions('status').then(value => { if (id === request.current) setStatus(value) }).catch(error => { if (id === request.current) setError(error.message) })
+    const cached = cachedVersions(comfy.path)
+    setStatus(cached?.value); setSelected(''); setError(cached?.error || ''); setNotice('')
+    if (readBlockedReason && !cached) return
+    setPending(!cached || cached.pending ? '正在获取官方版本…' : '')
+    loadVersions(comfy.path, () => window.comfy!.versions('fetch', '', settings.programProxy))
+      .then(value => { if (id === request.current) setStatus(value) })
+      .catch(error => { if (id === request.current) setError(error.message) })
+      .finally(() => { if (id === request.current) setPending('') })
     return () => { request.current++ }
-  }, [comfy.path])
+  }, [comfy.path, readBlockedReason])
   const current = status?.tag || comfy.version
   const latest = status?.tags[0]
   const updateAvailable = latest && newer(latest, current)
@@ -40,7 +47,10 @@ export function VersionsPage() {
     setPending(action === 'fetch' ? '正在获取官方版本…' : `正在切换到 ${target}…`)
     setError(''); setNotice('')
     try {
-      const value = await window.comfy!.versions(action, target, settings.programProxy)
+      const value = action === 'fetch'
+        ? await loadVersions(comfy.path, () => window.comfy!.versions('fetch', '', settings.programProxy), true)
+        : await window.comfy!.versions(action, target, settings.programProxy)
+      saveVersions(comfy.path, value)
       if (id !== request.current) return
       setStatus(value)
       if (action === 'switch') {
