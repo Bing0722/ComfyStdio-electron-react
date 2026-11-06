@@ -1,3 +1,4 @@
+import { SoftwareUpdate } from './SoftwareUpdate'
 import { useEffect, useState } from 'react'
 import type { DeviceReport } from '../../../../shared/device-api'
 import { Section } from '../../components/ui/Section'
@@ -38,6 +39,7 @@ export function AboutPage() {
   }, [])
   return (
     <div className="about-stack" aria-busy={busy}>
+      <SoftwareUpdate />
       <Section
         title="ComfyStdio"
         action={
@@ -58,7 +60,7 @@ export function AboutPage() {
             [
               '当前 ComfyUI',
               state.read.phase === 'ready'
-                ? `${state.comfy?.version} · ${state.comfy?.source === 'demo' ? '演示环境' : '本地程序'}`
+                ? `${state.comfy?.version} · 本地程序`
                 : '尚未读取',
             ],
             [

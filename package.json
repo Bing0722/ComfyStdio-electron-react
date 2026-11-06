@@ -1,13 +1,16 @@
 {
   "name": "comfystdio-electron-react",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && electron-vite build",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs"
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "package:win": "npm run build && electron-builder --win zip --x64 --publish never",
+    "package:dir": "npm run build && electron-builder --dir --publish never",
+    "package": "npm run build && electron-builder --publish never"
   },
   "engines": {
     "node": "^22.12.0 || >=24.0.0"
@@ -23,8 +26,55 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.0",
     "electron": "^43.0.0",
+    "electron-builder": "^26.18.0",
     "electron-vite": "^5.0.0",
     "typescript": "~5.9.3",
     "vite": "^7.0.0"
+  },
+  "description": "Portable ComfyUI desktop manager",
+  "author": "ComfyStdio contributors",
+  "build": {
+    "appId": "com.bing.comfystdio",
+    "productName": "ComfyStdio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "extraFiles": [
+      {
+        "from": "PORTABLE.md",
+        "to": "PORTABLE.md"
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false,
+      "artifactName": "ComfyStdio-${version}-win32-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "zip"
+      ],
+      "identity": null,
+      "artifactName": "ComfyStdio-${version}-darwin-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "zip"
+      ],
+      "category": "Graphics",
+      "artifactName": "ComfyStdio-${version}-linux-${arch}.${ext}"
+    }
   }
 }

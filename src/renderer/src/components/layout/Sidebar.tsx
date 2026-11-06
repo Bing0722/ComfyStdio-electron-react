@@ -18,9 +18,6 @@ export function Sidebar({
 }) {
   const { theme, setTheme } = usePreferences()
   const { state } = useWorkspace()
-  const activeDownloads = state.downloads.filter((task) =>
-    ['下载中', '排队'].includes(task.phase),
-  ).length
   return (
     <LayoutGroup id="workspace-nav">
       <aside className="sidebar">
@@ -46,9 +43,6 @@ export function Sidebar({
                 )}
                 <Icon name={item.icon} />
                 <span>{item.label}</span>
-                {item.id === 'downloads' && activeDownloads > 0 && (
-                  <span className="nav-count">{activeDownloads}</span>
-                )}
               </Button>
             ))}
         </nav>

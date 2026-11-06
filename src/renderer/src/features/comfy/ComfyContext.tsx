@@ -7,9 +7,7 @@ export function ComfyContext() {
     <>
       <div className="comfy-context">
         <div>
-          <span className="subtle-label">
-            当前 ComfyUI · {comfy.source === 'demo' ? '演示环境' : '本地读取'}
-          </span>
+          <span className="subtle-label">当前 ComfyUI · 本地读取</span>
           <code>{comfy.path}</code>
         </div>
         <Button

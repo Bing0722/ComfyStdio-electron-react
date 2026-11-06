@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button'
 import { SearchInput } from '../../components/ui/SearchInput'
 import { useFeedback } from '../../components/ui/FeedbackProvider'
 export function LogsPage() {
-  const { state, liveRuntime } = useWorkspace()
+  const { liveRuntime } = useWorkspace()
   const { notify } = useFeedback()
   const [level, setLevel] = useState('全部')
   const [query, setQuery] = useState('')
@@ -67,13 +67,6 @@ export function LogsPage() {
           </p>
         )}
       </Section>
-      {state.comfy?.source === 'demo' && (
-        <Section title="演示环境记录">
-          <pre className="log-output">
-            {state.runtime.logs.join('\n') || '等待启动演示。'}
-          </pre>
-        </Section>
-      )}
     </>
   )
 }

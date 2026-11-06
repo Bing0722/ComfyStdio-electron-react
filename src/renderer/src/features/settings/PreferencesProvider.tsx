@@ -17,8 +17,7 @@ interface Settings {
 interface Preferences {
   theme: Theme
   setTheme: (theme: Theme) => void
-  liquid: boolean
-  setLiquid: (value: boolean) => void
+  liquid: true
   settings: Settings
   updateSettings: (value: Partial<Settings>) => void
 }
@@ -42,7 +41,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     const saved = read('theme', '跟随系统')
     return themes.find((theme) => theme === saved) ?? '跟随系统'
   })
-  const [liquid, setLiquid] = useState(() => read('liquid', 'false') === 'true')
+  const liquid = true as const
   const [settings, setSettings] = useState<Settings>({
     modelProxy: read('modelProxy', ''),
     pluginProxy: read('pluginProxy', ''),
@@ -75,7 +74,6 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         theme,
         setTheme,
         liquid,
-        setLiquid,
         settings,
         updateSettings: (update) =>
           setSettings((current) => {

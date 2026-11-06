@@ -1,3 +1,5 @@
+import { configurePortable } from './portable/bootstrap'
+import { registerUpdates } from './updates/register-updates'
 import { registerDevice } from './device/register-device'
 import { registerComfyReader } from './comfy/register-comfy'
 import { app, BrowserWindow } from 'electron'
@@ -7,6 +9,17 @@ import {
   installEditingShortcuts,
 } from './application-menu'
 import { observeWindow, registerWindowControls } from './window-controls'
+
+const portable = configurePortable()
+if (!app.requestSingleInstanceLock()) app.exit(0)
+app.on('second-instance', () => {
+  const window = BrowserWindow.getAllWindows()[0]
+  if (window) {
+    if (window.isMinimized()) window.restore()
+    window.show()
+    window.focus()
+  }
+})
 
 function createWindow(): void {
   const isMac = process.platform === 'darwin'
@@ -56,7 +69,8 @@ function createWindow(): void {
 void app.whenReady().then(() => {
   configureApplicationMenu()
   registerWindowControls()
-  registerComfyReader()
+  registerComfyReader(portable)
+  registerUpdates(portable)
   registerDevice()
   createWindow()
   app.on('activate', () => {

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 import type { Filter, Model } from '../../state/types'
-import { modelTypes } from '../../state/demo-data'
+import { modelTypes } from '../../state/initial-state'
 import { Select } from '../../components/ui/Select'
 import { SearchInput } from '../../components/ui/SearchInput'
 import { EmptyState } from '../../components/ui/Section'

@@ -9,26 +9,15 @@ import { useFeedback } from '../../components/ui/FeedbackProvider'
 import { ComfyContext } from './ComfyContext'
 export function LaunchPage() {
   const comfy = useComfy()
-  const { state, dispatch, readComfy, readBlockedReason, liveRuntime } =
-    useWorkspace()
+  const { state, readComfy, readBlockedReason, liveRuntime } = useWorkspace()
   const { showDialog, notify } = useFeedback()
   const [mode, setMode] = useState<RunMode>('API 服务')
   const [pending, setPending] = useState(false)
   const [python, setPython] = useState('')
   const status =
-    comfy.source === 'local' && liveRuntime.path === comfy.path
-      ? liveRuntime.status
-      : state.runtime.status
+    liveRuntime.path === comfy.path ? liveRuntime.status : state.runtime.status
   const running = ['启动中', '运行中', '停止中'].includes(status)
   async function operate(action: 'start' | 'restart' | 'stop') {
-    if (comfy.source === 'demo') {
-      dispatch({
-        type: 'runtime/status',
-        status: action === 'stop' ? '已停止' : '启动中',
-      })
-      notify('演示环境运行状态已更新')
-      return
-    }
     setPending(true)
     try {
       if (!window.runtime) throw new Error('请使用桌面应用')
@@ -53,9 +42,7 @@ export function LaunchPage() {
           </div>
           <Status value={status} />
         </div>
-        <p className="launch-version">
-          {comfy.version} · {comfy.source === 'demo' ? '演示环境' : '本地程序'}
-        </p>
+        <p className="launch-version">{comfy.version} · 本地程序</p>
         <div className="setting-row">
           <div>
             <h3>启动方式</h3>
@@ -73,23 +60,17 @@ export function LaunchPage() {
           仅监听本机。运行记录、警告和异常请查看侧栏“运行日志”。
         </p>
         <div className="launch-footer">
-          <span className="muted">
-            {comfy.source === 'demo'
-              ? '以下操作为演示'
-              : '使用当前程序的 Python 环境'}
-          </span>
+          <span className="muted">使用当前程序的 Python 环境</span>
           <div className="row-actions">
             <Button
               className="button-primary"
-              disabled={pending || running || Boolean(state.versionTask)}
+              disabled={pending || running}
               onClick={() => void operate('start')}
             >
               启动 ComfyUI
             </Button>
             <Button
-              disabled={
-                pending || status !== '运行中' || Boolean(state.versionTask)
-              }
+              disabled={pending || status !== '运行中'}
               onClick={() => void operate('restart')}
             >
               重启
@@ -103,7 +84,7 @@ export function LaunchPage() {
           </div>
         </div>
       </Surface>
-      {comfy.source === 'local' && (
+      {
         <Section
           title="Python 环境"
           action={
@@ -131,7 +112,7 @@ export function LaunchPage() {
             所选环境需要已安装 ComfyUI 依赖。选择其他启动方式后，重启生效。
           </p>
         </Section>
-      )}
+      }
       <Section title="程序内容">
         <dl className="comfy-paths">
           <div>

@@ -1,3 +1,6 @@
+import type { PortablePaths } from '../portable/paths'
+import { readCurrentPath, saveCurrentPath } from '../portable/state'
+import { existsSync } from 'node:fs'
 import { registerRuntime } from '../runtime/register-runtime'
 import { join } from 'node:path'
 import { validateProxy } from '../../shared/proxy'
@@ -12,13 +15,15 @@ import {
 import { readInstallation } from './read-installation'
 import type { ComfyReadResult } from '../../shared/comfy-api'
 
-export function registerComfyReader() {
-  let currentPath: string | null = null
+export function registerComfyReader(portable: PortablePaths) {
+  const saved = readCurrentPath(portable)
+  let currentPath: string | null = existsSync(saved) ? saved : null
   let busy = false
   let acquisition: AbortController | null = null
   const runtime = registerRuntime(
     () => currentPath,
     () => busy,
+    portable,
   )
   const windowFor = (event: IpcMainInvokeEvent) => {
     if (event.senderFrame !== event.sender.mainFrame)
@@ -30,6 +35,7 @@ export function registerComfyReader() {
   const scan = async (path: string): Promise<ComfyReadResult> => {
     try {
       const installation = await readInstallation(path)
+      saveCurrentPath(portable, installation.path)
       currentPath = installation.path
       return { status: 'ready', installation }
     } catch (error) {
@@ -76,18 +82,9 @@ export function registerComfyReader() {
       window.once('closed', cancel)
       try {
         const validated = validateProxy(proxy)
-        const choice = await dialog.showOpenDialog(window, {
-          title: '选择存放位置（将新建 ComfyUI 文件夹）',
-          properties: ['openDirectory', 'createDirectory'],
-        })
-        if (
-          choice.canceled ||
-          !choice.filePaths[0] ||
-          controller.signal.aborted
-        )
-          return { status: 'cancelled' }
+        if (controller.signal.aborted) return { status: 'cancelled' }
         const path = await acquireComfy(
-          choice.filePaths[0],
+          portable.root,
           controller.signal,
           undefined,
           validated,

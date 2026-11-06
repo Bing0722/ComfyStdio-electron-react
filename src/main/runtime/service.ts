@@ -26,14 +26,17 @@ export class RuntimeService {
   private changed: (state: RuntimeSnapshot) => void
   private openUI: () => Promise<void>
   private port: number
+  private environment: NodeJS.ProcessEnv
   constructor(
     changed: (state: RuntimeSnapshot) => void,
     openUI: () => Promise<void>,
     port = 8188,
+    environment: NodeJS.ProcessEnv = {},
   ) {
     this.changed = changed
     this.openUI = openUI
     this.port = port
+    this.environment = environment
   }
   get busy() {
     return !!this.child || ['启动中', '停止中'].includes(this.state.status)
@@ -126,7 +129,7 @@ export class RuntimeService {
           windowsHide: true,
           detached: process.platform !== 'win32',
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, PYTHONUNBUFFERED: '1' },
+          env: { ...process.env, ...this.environment, PYTHONUNBUFFERED: '1' },
         },
       )
       this.child = child

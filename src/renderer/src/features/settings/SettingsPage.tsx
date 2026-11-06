@@ -1,4 +1,3 @@
-import { Switch } from '../../components/ui/Switch'
 import { Section } from '../../components/ui/Section'
 import { Select } from '../../components/ui/Select'
 import { themes, usePreferences } from './PreferencesProvider'
@@ -6,8 +5,7 @@ import { ProxyCard } from './ProxyCard'
 import { FolderSettings } from './FolderSettings'
 import './settings.css'
 export function SettingsPage() {
-  const { theme, setTheme, liquid, setLiquid, settings, updateSettings } =
-    usePreferences()
+  const { theme, setTheme, settings, updateSettings } = usePreferences()
   return (
     <div className="settings-stack">
       <Section title="外观">
@@ -28,7 +26,7 @@ export function SettingsPage() {
             <h3>液态效果</h3>
             <p>大面积透光玻璃、柔和折射与随光高光。</p>
           </div>
-          <Switch checked={liquid} onChange={setLiquid} label="液态效果" />
+          <span className="muted">始终开启</span>
         </div>
       </Section>
       <FolderSettings />
@@ -36,12 +34,12 @@ export function SettingsPage() {
         title="模型下载"
         value={settings.modelProxy}
         onSave={(modelProxy) => updateSettings({ modelProxy })}
-        description="单独保存用于模型下载；当前下载仍为演示，尚未发起真实网络请求。"
+        description="为后续模型下载保留的独立代理配置，目前尚未接入传输。"
       >
         <div className="setting-row">
           <div>
             <h3>并行下载</h3>
-            <p>保存下载偏好，当前任务为演示。</p>
+            <p>保存后续下载使用的偏好。</p>
           </div>
           <Select
             label="并行下载任务"
@@ -55,13 +53,13 @@ export function SettingsPage() {
         title="插件安装与更新"
         value={settings.pluginProxy}
         onSave={(pluginProxy) => updateSettings({ pluginProxy })}
-        description="单独保存用于插件安装与更新；当前插件操作仍为演示，尚未接入真实网络。"
+        description="为后续插件安装和更新保留的代理配置，目前尚未接入。"
       />
       <ProxyCard
         title="ComfyUI 获取与更新"
         value={settings.programProxy}
         onSave={(programProxy) => updateSettings({ programProxy })}
-        description="应用于下一次获取官方 ComfyUI 程序。版本更新仍为演示；不修改系统或 Git 全局代理。"
+        description="应用于下一次获取官方 ComfyUI 程序。内置 ComfyUI 版本更新尚未接入；不修改系统或 Git 全局代理。"
       />
     </div>
   )

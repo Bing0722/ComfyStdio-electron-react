@@ -1,7 +1,6 @@
 import { useWorkspace } from '../../state/WorkspaceProvider'
 import { useEffect, useState } from 'react'
 import type { WindowState } from '../../../../shared/window-api'
-import { usePreferences } from '../../features/settings/PreferencesProvider'
 import { Button } from '../ui/Button'
 import { Icon } from '../ui/Icon'
 
@@ -19,7 +18,6 @@ export function TitleBar({
     fullScreen: false,
     focused: true,
   })
-  const { liquid, setLiquid } = usePreferences()
   useEffect(() => {
     if (!api) return
     let mounted = true
@@ -45,20 +43,10 @@ export function TitleBar({
         <span>{title}</span>
       </div>
       <div className="titlebar-actions">
-        <span className="demo-label">
-          {workspace.comfy?.source === 'local'
-            ? '本地 ComfyUI'
-            : '演示模式'}
+        <span className="environment-label">
+          {workspace.comfy ? '本地 ComfyUI' : '未读取程序'}
         </span>
-        <Button
-          className={`titlebar-button ${liquid ? 'is-on' : ''}`}
-          aria-label="切换液态玻璃"
-          aria-pressed={liquid}
-          title="切换液态玻璃"
-          onClick={() => setLiquid(!liquid)}
-        >
-          <Icon name="glass" size={17} />
-        </Button>
+
         <Button
           className="titlebar-button"
           aria-label="打开设置"

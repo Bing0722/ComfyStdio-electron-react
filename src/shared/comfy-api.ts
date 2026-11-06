@@ -19,7 +19,7 @@ export interface ComfyInstallation {
   modelsPath: string
   pluginsPath: string
   version: string
-  source: 'demo' | 'local'
+  source: 'local'
   readAt: string
   models: Model[]
   plugins: Record<string, Plugin>

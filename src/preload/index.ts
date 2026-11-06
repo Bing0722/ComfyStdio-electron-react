@@ -48,3 +48,10 @@ const runtimeAPI: RuntimeAPI = {
   },
 }
 contextBridge.exposeInMainWorld('runtime', runtimeAPI)
+
+contextBridge.exposeInMainWorld('application', {
+  info: () => ipcRenderer.invoke('application:info'),
+  checkUpdate: () => ipcRenderer.invoke('application:check-update'),
+  downloadUpdate: () => ipcRenderer.invoke('application:download-update'),
+  openUpdates: () => ipcRenderer.invoke('application:open-updates'),
+})

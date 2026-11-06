@@ -13,3 +13,8 @@
 .env
 .env.*
 !.env.example
+
+# Portable runtime and release archives
+/Data/
+/ComfyUI/
+/release/

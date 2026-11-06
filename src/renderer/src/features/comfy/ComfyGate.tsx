@@ -50,9 +50,6 @@ export function ComfyGate({ children }: { children: ReactNode }) {
         >
           {reading ? '读取中…' : '选择并读取 ComfyUI'}
         </Button>
-        <Button disabled={reading} onClick={() => void readComfy('demo')}>
-          读取演示环境
-        </Button>
       </div>
       <p className="footnote">
         获取需要 Git，将新建 ComfyUI
