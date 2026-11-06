@@ -1,6 +1,6 @@
 import { PluginCatalog } from './PluginCatalog'
 import './plugins.css'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { usePreferences } from '../settings/PreferencesProvider'
 import { Button } from '../../components/ui/Button'
 import { EmptyState, Section } from '../../components/ui/Section'
@@ -17,18 +17,27 @@ export function PluginsPage() {
   const [repository, setRepository] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [installing, setInstalling] = useState('')
+  const [installProgress, setInstallProgress] = useState('')
+  useEffect(() => window.comfy?.onPluginProgress(value => {
+    if (value.url === installing) setInstallProgress(value.message.trim().split(/[\r\n]/).filter(Boolean).at(-1) || '正在下载…')
+  }), [installing])
   async function operate(action: 'install' | 'dependencies' | 'toggle', value: string) {
     if (busy) return
     setBusy(true)
+    if (action === 'install') { setInstalling(value); setInstallProgress('准备下载…') }
     setError('')
     try {
       await window.comfy!.managePlugin(action, value, settings.pluginProxy)
+      if (action === 'install') setInstallProgress('正在刷新插件列表…')
       await readComfy('refresh')
+      if (action === 'install') showDialog({ title: '插件文件安装成功', text: '插件已保存到当前 ComfyUI。请按需安装依赖并重启 ComfyUI。' })
       notify(action === 'install' ? '插件已下载，请安装依赖后启动 ComfyUI。' : '插件操作完成，下次启动生效。')
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error))
     } finally {
       setBusy(false)
+      setInstalling('')
     }
   }
   const plugins = Object.values(comfy.plugins).filter((plugin) =>
@@ -47,7 +56,7 @@ export function PluginsPage() {
         <p role="status" style={{ visibility: busy ? 'visible' : 'hidden' }}>正在处理插件，详细输出可在运行日志查看…</p>
         {error && <pre className="log-output" role="alert">{error}</pre>}
       </Section>
-      <PluginCatalog proxy={settings.pluginProxy} installed={Object.keys(comfy.plugins)} disabled={busy || !!readBlockedReason} install={url => void operate('install', url)} />
+      <PluginCatalog installing={installing} installProgress={installProgress} proxy={settings.pluginProxy} installed={Object.keys(comfy.plugins)} disabled={busy || !!readBlockedReason} install={url => void operate('install', url)} />
       <div className="toolbar plugin-local-search">
         <SearchInput
           label="搜索当前 ComfyUI 插件…"

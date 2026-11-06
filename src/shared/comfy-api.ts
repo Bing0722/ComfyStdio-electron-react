@@ -40,8 +40,10 @@ export interface AcquisitionProgress {
   total?: number
 }
 export interface VersionStatus { commit: string; branch: string; tag: string; dirty: boolean; tags: string[] }
-export interface CatalogPlugin { title: string; author: string; description: string; url: string }
+export interface CatalogPlugin { stars?: number; updated?: string; title: string; author: string; description: string; url: string }
 export interface ComfyAPI {
+  openPluginRepository: (url: string) => Promise<void>
+  onPluginProgress: (callback: (value: { url: string; message: string }) => void) => () => void
   modelCatalog: (refresh: boolean, proxy: string) => Promise<DownloadModel[]>
   downloadModel: (url: string, proxy: string) => Promise<string>
   pluginCatalog: (refresh: boolean, proxy: string) => Promise<CatalogPlugin[]>

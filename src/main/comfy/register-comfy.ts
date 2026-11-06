@@ -1,5 +1,5 @@
 import { modelCatalog, downloadModel } from './model-download'
-import { parseCatalog } from './catalog'
+import { parseCatalog, attachStars } from './catalog'
 import { manageVersions } from './versions'
 import type { PortablePaths } from '../portable/paths'
 import { readCurrentPath, saveCurrentPath } from '../portable/state'
@@ -37,7 +37,12 @@ export function registerComfyReader(portable: PortablePaths) {
         await connection.setProxy(validated ? { mode: 'fixed_servers', proxyRules: validated.replace(/^socks5h:/i, 'socks5:') } : { mode: 'system' })
         const response = await connection.fetch('https://raw.githubusercontent.com/Comfy-Org/ComfyUI-Manager/main/custom-node-list.json', { signal: AbortSignal.timeout(30000), credentials: 'omit' })
         if (!response.ok) throw new Error(`目录获取失败：HTTP ${response.status}`)
-        return parseCatalog(await response.json())
+        const items = parseCatalog(await response.json())
+        try {
+          const stats = await connection.fetch('https://raw.githubusercontent.com/Comfy-Org/ComfyUI-Manager/main/github-stats.json', { signal: AbortSignal.timeout(30000), credentials: 'omit' })
+          if (stats.ok) return attachStars(items, await stats.json())
+        } catch {}
+        return items
       })().finally(() => { catalogSettled = true })
     }
     return catalogRequest
@@ -230,6 +235,11 @@ export function registerComfyReader(portable: PortablePaths) {
     try { return await manageVersions(currentPath, action, tag, proxy) }
     finally { busy = false }
   })
+  ipcMain.handle('comfy:plugin-repository', async (event, url) => {
+    windowFor(event)
+    if (typeof url !== 'string' || !/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+$/.test(url)) throw new Error('仓库地址无效')
+    await shell.openExternal(url.replace(/\.git$/, ''))
+  })
   ipcMain.handle('comfy:plugin', async (event, action, value, proxy) => {
     windowFor(event)
     if (busy || runtime.busy || !currentPath)
@@ -245,7 +255,10 @@ export function registerComfyReader(portable: PortablePaths) {
     }
     app.on('before-quit', deferQuit)
     try {
-      await managePlugin(currentPath, runtime.selectedPython(currentPath), action, value, proxy, runtime.pluginLog)
+      await managePlugin(currentPath, runtime.selectedPython(currentPath), action, value, proxy, text => {
+        runtime.pluginLog(text)
+        if (action === 'install' && !event.sender.isDestroyed()) event.sender.send('comfy:plugin-progress', { url: value, message: text.slice(-2000) })
+      })
     } finally {
       busy = false
       app.removeListener('before-quit', deferQuit)

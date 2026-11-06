@@ -12,3 +12,11 @@ export function parseCatalog(data: unknown): CatalogPlugin[] {
   }
   return [...entries.values()].sort((a, b) => a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }))
 }
+
+export function attachStars(items: CatalogPlugin[], data: Record<string, { stars?: number; last_update?: string }>): CatalogPlugin[] {
+ const stats = new Map(Object.entries(data).map(([url, value]) => [url.toLowerCase().replace(/\.git$/, ''), value]))
+ return items.map(item => {
+  const value = stats.get(item.url.toLowerCase().replace(/\.git$/, ''))
+  return { ...item, stars: Number.isSafeInteger(value?.stars) && value!.stars! >= 0 ? value!.stars : undefined, updated: typeof value?.last_update === 'string' ? value.last_update : undefined }
+ })
+}

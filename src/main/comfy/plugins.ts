@@ -38,10 +38,13 @@ export async function managePlugin(
     const target = join(directory, name)
     if (await lstat(target).catch(() => null))
       throw new Error('该插件已存在。')
+    output('正在连接仓库并下载插件…')
     const staging = await mkdtemp(join(directory, '.install-'))
     try {
-      await command('git', ['-c', `http.proxy=${validated}`, 'clone', '--depth', '1', '--', url.href, join(staging, name)], root, output)
+      await command('git', ['-c', `http.proxy=${validated}`, 'clone', '--progress', '--depth', '1', '--', url.href, join(staging, name)], root, output)
+      output('正在保存插件文件…')
       await rename(join(staging, name), target)
+      output('插件文件安装完成')
     } finally {
       await rm(staging, { recursive: true, force: true })
     }

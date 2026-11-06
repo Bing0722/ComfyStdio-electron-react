@@ -24,6 +24,12 @@ contextBridge.exposeInMainWorld('device', {
   read: () => ipcRenderer.invoke('device:read'),
 })
 const comfyAPI: ComfyAPI = {
+  openPluginRepository: url => ipcRenderer.invoke('comfy:plugin-repository', url),
+  onPluginProgress: callback => {
+    const listener = (_event: Electron.IpcRendererEvent, value: Parameters<typeof callback>[0]) => callback(value)
+    ipcRenderer.on('comfy:plugin-progress', listener)
+    return () => ipcRenderer.removeListener('comfy:plugin-progress', listener)
+  },
   modelCatalog: (refresh, proxy) => ipcRenderer.invoke('comfy:model-catalog', refresh, proxy),
   downloadModel: (url, proxy) => ipcRenderer.invoke('comfy:model-download', url, proxy),
   pluginCatalog: (refresh, proxy) => ipcRenderer.invoke('comfy:catalog', refresh, proxy),

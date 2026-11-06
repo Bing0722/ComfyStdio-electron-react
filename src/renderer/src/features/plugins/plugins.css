@@ -7,3 +7,8 @@
 .plugin-catalog-card small { color: var(--muted); }
 .plugin-catalog-card p { color: var(--muted); font-size: 12px; line-height: 1.7; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
 .plugin-catalog-card code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+
+.plugin-title-link { border: 0; background: transparent; color: inherit; font: inherit; padding: 0; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.plugin-title-link:hover { text-decoration: underline; }
+.plugin-install-progress { display: grid; gap: 8px; overflow-wrap: anywhere; }
+.plugin-install-progress progress { width: 100%; }
