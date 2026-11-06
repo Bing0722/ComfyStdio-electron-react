@@ -53,7 +53,7 @@ export function SettingsPage() {
         title="插件安装与更新"
         value={settings.pluginProxy}
         onSave={(pluginProxy) => updateSettings({ pluginProxy })}
-        description="为后续插件安装和更新保留的代理配置，目前尚未接入。"
+        description="用于插件仓库下载和 Python 依赖安装。"
       />
       <ProxyCard
         title="ComfyUI 获取与更新"

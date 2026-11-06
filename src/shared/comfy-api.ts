@@ -33,6 +33,7 @@ export type ComfyReadResult =
   | { status: 'failed'; error: string }
 export type AcquisitionKind = 'source' | 'portable' | 'both'
 export interface ComfyAPI {
+  managePlugin: (action: 'install' | 'dependencies' | 'toggle', value: string, proxy: string) => Promise<void>
   acquire: (kind: AcquisitionKind, proxy?: string) => Promise<ComfyReadResult>
   openFolder: (kind: 'program' | 'models' | 'plugins') => Promise<string>
   cancelAcquire: () => Promise<void>

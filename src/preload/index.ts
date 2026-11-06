@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('device', {
   read: () => ipcRenderer.invoke('device:read'),
 })
 const comfyAPI: ComfyAPI = {
+  managePlugin: (action, value, proxy) => ipcRenderer.invoke('comfy:plugin', action, value, proxy),
   acquire: (kind, proxy) => ipcRenderer.invoke('comfy:acquire', kind, proxy),
   openFolder: (kind) => ipcRenderer.invoke('comfy:open-folder', kind),
   cancelAcquire: () => ipcRenderer.invoke('comfy:cancel-acquire'),

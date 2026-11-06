@@ -4,10 +4,12 @@ import { existsSync } from 'node:fs'
 import { registerRuntime } from '../runtime/register-runtime'
 import { join } from 'node:path'
 import { validateProxy } from '../../shared/proxy'
+import { managePlugin } from './plugins'
 import { acquirePortable } from './acquire-portable'
 import { findEmbeddedPython } from '../runtime/python'
 import { acquireComfy } from './acquire'
 import {
+  app,
   BrowserWindow,
   shell,
   session,
@@ -153,6 +155,28 @@ export function registerComfyReader(portable: PortablePaths) {
       }
     },
   )
+  ipcMain.handle('comfy:plugin', async (event, action, value, proxy) => {
+    windowFor(event)
+    if (busy || runtime.busy || !currentPath)
+      throw new Error('请先读取 ComfyUI 并停止运行中的程序。')
+    if (!['install', 'dependencies', 'toggle'].includes(action) ||
+        typeof value !== 'string' || typeof proxy !== 'string')
+      throw new Error('插件操作参数无效。')
+    busy = true
+    let quitRequested = false
+    const deferQuit = (event: Electron.Event) => {
+      event.preventDefault()
+      quitRequested = true
+    }
+    app.on('before-quit', deferQuit)
+    try {
+      await managePlugin(currentPath, runtime.selectedPython(currentPath), action, value, proxy, runtime.pluginLog)
+    } finally {
+      busy = false
+      app.removeListener('before-quit', deferQuit)
+      if (quitRequested) app.quit()
+    }
+  })
   ipcMain.handle('comfy:open-folder', async (event, kind: unknown) => {
     windowFor(event)
     if (

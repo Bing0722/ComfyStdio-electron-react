@@ -120,5 +120,6 @@ export function registerRuntime(
   return {
     get busy() { return service.busy || choosing },
     selectedPython: selections.get,
+    pluginLog: (text: string) => service.log(text, '插件管理'),
   }
 }

@@ -1,6 +1,6 @@
 # ComfyStdio · Electron + React
 
-当前开发版本：**0.8.0**。基于 Electron、React、TypeScript 和 Motion 的 ComfyUI 桌面管理程序，采用固定液态玻璃界面，只展示真实程序和本地资产。
+当前开发版本：**0.8.1**。基于 Electron、React、TypeScript 和 Motion 的 ComfyUI 桌面管理程序，采用固定液态玻璃界面，只展示真实程序和本地资产。
 
 ## 文件夹便携版
 
@@ -26,7 +26,7 @@
 - 启动、重启、停止：仅监听 `127.0.0.1:8188`。保存 API 服务／打开网页和仅使用 CPU 的选择。便携版默认使用内置 Python，也可为各程序目录指定解释器，路径保存在 `Data/python.json`。
 - 运行日志：捕获 stdout/stderr、警告与异常，支持搜索、级别筛选和导出，保留本次会话最近 1000 条。
 - 模型分类、明显的插件禁用标记、设备与 NVIDIA/CUDA 信息。
-- 所有演示入口、模拟定时任务和预置资产已移除。模型下载、插件修改、ComfyUI 版本切换尚未接入；对应页面只读，不提供模拟成功按钮。
+- 所有演示入口、模拟定时任务和预置资产已移除。模型下载、插件版本更新、ComfyUI 版本切换尚未接入；对应页面只读，不提供模拟成功按钮。
 - 获取源码不会自动安装 Python/PyTorch；建议在 `ComfyUI/.venv` 内配置环境。常见模型库/Python 缓存重定向至 `Data/cache`。
 - 目录扫描暂不解析 `extra_model_paths.yaml` 或跟随符号链接；发现这些情况会提示。
 
@@ -42,7 +42,7 @@ npm run build
 npm run package:win
 ```
 
-`package:win` 生成 `release/ComfyStdio-0.8.0-win32-x64.zip`；`package:dir` 生成本机解包目录；`package` 生成本机 ZIP。开发模式的数据也在项目旁 `Data`，已被 Git 忽略。自动测试需要 Python 与本机临时端口。
+`package:win` 生成 `release/ComfyStdio-0.8.1-win32-x64.zip`；`package:dir` 生成本机解包目录；`package` 生成本机 ZIP。开发模式的数据也在项目旁 `Data`，已被 Git 忽略。自动测试需要 Python 与本机临时端口。
 
 `.github/workflows/portable.yml` 可手动生成各平台包；推送 `v*` 标签时在构建通过后发布 GitHub Release。普通 main 推送不会自动发布版本。
 
@@ -60,3 +60,5 @@ npm run package:win
 | 0.3.0 | 自定义标题栏、液态玻璃和 Motion 动效 |
 | 0.2.x | 早期交互原型与模块拆分（已移除模拟功能） |
 | 0.1.x | 应用骨架 |
+
+0.8.1 接入插件 HTTPS Git 安装、requirements.txt 依赖安装、启用和禁用。操作前须停止 ComfyUI，操作后自动重新读取目录。依赖安装使用当前程序的解释器。
