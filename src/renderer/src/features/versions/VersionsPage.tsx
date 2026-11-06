@@ -1,46 +1,79 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { VersionStatus } from '../../../../shared/comfy-api'
 import { Section } from '../../components/ui/Section'
 import { Button } from '../../components/ui/Button'
 import { useComfy, useWorkspace } from '../../state/WorkspaceProvider'
 import { usePreferences } from '../settings/PreferencesProvider'
 import { ComfyContext } from '../comfy/ComfyContext'
+import './versions.css'
+const newer = (a: string, b: string) => {
+  const left = a.replace(/^v/, '').split('.').map(Number)
+  const right = b.replace(/^v/, '').split('.').map(Number)
+  if (right.length !== 3 || right.some(Number.isNaN)) return false
+  for (let i = 0; i < 3; i++) { if (left[i] !== right[i]) return left[i] > right[i] }
+  return false
+}
 export function VersionsPage() {
   const comfy = useComfy()
   const { readComfy, readBlockedReason } = useWorkspace()
   const { settings } = usePreferences()
   const [status, setStatus] = useState<VersionStatus>()
-  const [pending, setPending] = useState(false)
+  const [pending, setPending] = useState('')
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [selected, setSelected] = useState('')
+  const [search, setSearch] = useState('')
+  const request = useRef(0)
   useEffect(() => {
-    let active = true
-    setError('')
-    window.comfy!.versions('status').then(value => { if (active) setStatus(value) }).catch(error => { if (active) setError(error.message) })
-    return () => { active = false }
-  }, [comfy.path, comfy.readAt])
-  async function operate(action: 'fetch' | 'switch') {
-    setPending(true); setError('')
+    const id = ++request.current
+    setStatus(undefined); setSelected(''); setError(''); setNotice('')
+    window.comfy!.versions('status').then(value => { if (id === request.current) setStatus(value) }).catch(error => { if (id === request.current) setError(error.message) })
+    return () => { request.current++ }
+  }, [comfy.path])
+  const current = status?.tag || comfy.version
+  const latest = status?.tags[0]
+  const updateAvailable = latest && newer(latest, current)
+  const blocked = !!pending || !!readBlockedReason
+  async function operate(action: 'fetch' | 'switch', target = selected) {
+    if (blocked) return
+    const id = ++request.current
+    setPending(action === 'fetch' ? '正在获取官方版本…' : `正在切换到 ${target}…`)
+    setError(''); setNotice('')
     try {
-      setStatus(await window.comfy!.versions(action, selected, settings.programProxy))
-      if (action === 'switch') await readComfy('refresh')
-    } catch (error) { setError(error instanceof Error ? error.message : String(error)) }
-    finally { setPending(false) }
+      const value = await window.comfy!.versions(action, target, settings.programProxy)
+      if (id !== request.current) return
+      setStatus(value)
+      if (action === 'switch') {
+        setSelected(target)
+        await readComfy('refresh')
+        setNotice(`已切换到 ${target}`)
+      } else setNotice(`已获取 ${value.tags.length} 个官方版本`)
+    } catch (error) { if (id === request.current) setError(error instanceof Error ? error.message : String(error)) }
+    finally { setPending('') }
   }
+  const tags = status?.tags.filter(tag => tag.toLowerCase().includes(search.toLowerCase())) || []
   return <>
     <ComfyContext />
-    <Section title="当前 ComfyUI 版本">
-      <h3>{comfy.version}</h3>
-      {status && <><p>提交：{status.commit}</p><p>分支：{status.branch || '固定版本'} · 标签：{status.tag || '无匹配标签'}</p><p>{status.dirty ? '存在本地改动，不能切换' : '工作目录干净'}</p></>}
-      <Button disabled={pending || !!readBlockedReason} onClick={() => void operate('fetch')}>获取官方版本</Button>
-      <select aria-label="目标 ComfyUI 版本" value={selected} disabled={pending} onChange={event => setSelected(event.target.value)}>
-        <option value="">选择版本</option>
-        {status?.tags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
-      </select>
-      <Button disabled={pending || !!readBlockedReason || !selected || status?.dirty} onClick={() => void operate('switch')}>切换版本</Button>
-      <p role="status">{pending ? '正在处理版本，请稍候…' : ''}</p>
+    <Section title="ComfyUI 版本管理">
+      <div className="version-overview">
+        <div><span className="subtle-label">当前安装</span><h2>{current}</h2><p>{status?.branch || '固定版本'} · {status?.commit.slice(0, 10) || '正在读取版本信息'}</p></div>
+        <div className="version-update"><span className="subtle-label">官方版本</span><strong>{latest || '尚未获取'}</strong><span>{updateAvailable ? '有新版本可以更新' : latest ? '可从下方选择目标版本' : '获取后查看可用更新'}</span>
+          <div className="version-actions"><Button disabled={blocked} onClick={() => void operate('fetch')}>{latest ? '刷新版本' : '获取官方版本'}</Button>
+          {updateAvailable && <Button className="button-primary" disabled={blocked || !!status?.dirty} onClick={() => void operate('switch', latest)}>更新至 {latest}</Button>}</div>
+        </div>
+      </div>
+      <div className="version-feedback" role="status">{pending || notice || (status?.dirty ? '当前目录有本地改动，处理后才能切换版本。' : '切换前请先停止 ComfyUI。')}</div>
       {error && <p role="alert" className="error-text">{error}</p>}
-      <p className="footnote">切换当前目录的 ComfyUI 核心代码。模型、插件和 Python 环境不会随版本切换；跨版本可能需要更新依赖。没有 Git 仓库的目录不支持切换。</p>
+    </Section>
+    <Section title="可用版本" count={status?.tags.length || 0}>
+      <div className="version-toolbar"><input aria-label="搜索版本" placeholder="搜索版本号，如 0.44" value={search} onChange={event => setSearch(event.target.value)} /><span>{selected ? `已选择 ${selected}` : '选择要使用的版本'}</span></div>
+      <div className="version-list" role="group" aria-label="可用 ComfyUI 版本">
+        {tags.map(tag => <button type="button" className={`version-option ${selected === tag ? 'is-selected' : ''}`} key={tag} aria-pressed={selected === tag} disabled={blocked} onClick={() => setSelected(tag)}>
+          <span><strong>{tag}</strong><small>{tag === current ? '当前版本' : tag === latest ? '最新版本' : '历史版本'}</small></span><span aria-hidden="true">{selected === tag ? '✓' : '○'}</span>
+        </button>)}
+        {!tags.length && <p className="version-empty">{status?.tags.length ? '没有匹配的版本' : '点击“获取官方版本”加载可切换的版本。'}</p>}
+      </div>
+      <div className="version-footer"><p>切换核心代码，保留模型、插件和 Python 环境。跨版本可能需要更新依赖。</p><Button className="button-primary" disabled={blocked || !selected || selected === current || !status || status.dirty} onClick={() => void operate('switch')}>{selected === current ? '正在使用此版本' : selected ? `切换到 ${selected}` : '选择版本后切换'}</Button></div>
     </Section>
   </>
 }

@@ -22,7 +22,7 @@ export async function manageVersions(root: string, action: string, tag = '', pro
   return {
     commit: await git(root, ['rev-parse', 'HEAD']),
     branch: await git(root, ['branch', '--show-current']),
-    tag: await git(root, ['describe', '--tags', '--exact-match']).catch(() => ''),
+    tag: (await git(root, ['for-each-ref', '--points-at=HEAD', '--format=%(refname:strip=3)', 'refs/comfystdio/releases/'])).split('\n')[0] || await git(root, ['describe', '--tags', '--exact-match']).catch(() => ''),
     dirty: Boolean(await git(root, ['status', '--porcelain'])),
     tags: (await git(root, ['for-each-ref', '--sort=-version:refname', '--format=%(refname:strip=3)', 'refs/comfystdio/releases/'])).split('\n').filter(tag => /^v?\d+\.\d+\.\d+$/.test(tag)),
   }
