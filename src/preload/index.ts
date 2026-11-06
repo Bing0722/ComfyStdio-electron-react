@@ -24,6 +24,8 @@ contextBridge.exposeInMainWorld('device', {
   read: () => ipcRenderer.invoke('device:read'),
 })
 const comfyAPI: ComfyAPI = {
+  modelCatalog: (refresh, proxy) => ipcRenderer.invoke('comfy:model-catalog', refresh, proxy),
+  downloadModel: (url, proxy) => ipcRenderer.invoke('comfy:model-download', url, proxy),
   pluginCatalog: (refresh, proxy) => ipcRenderer.invoke('comfy:catalog', refresh, proxy),
   versions: (action, tag, proxy) => ipcRenderer.invoke('comfy:versions', action, tag, proxy),
   onAcquisitionProgress: (callback) => {

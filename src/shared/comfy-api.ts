@@ -1,3 +1,4 @@
+export interface DownloadModel { name: string; type: string; base: string; description: string; filename: string; folder: string; url: string; size: string }
 export interface Model {
   id: string
   name: string
@@ -41,6 +42,8 @@ export interface AcquisitionProgress {
 export interface VersionStatus { commit: string; branch: string; tag: string; dirty: boolean; tags: string[] }
 export interface CatalogPlugin { title: string; author: string; description: string; url: string }
 export interface ComfyAPI {
+  modelCatalog: (refresh: boolean, proxy: string) => Promise<DownloadModel[]>
+  downloadModel: (url: string, proxy: string) => Promise<string>
   pluginCatalog: (refresh: boolean, proxy: string) => Promise<CatalogPlugin[]>
   versions: (action: 'status' | 'fetch' | 'switch', tag?: string, proxy?: string) => Promise<VersionStatus>
   onAcquisitionProgress: (callback: (progress: AcquisitionProgress) => void) => () => void

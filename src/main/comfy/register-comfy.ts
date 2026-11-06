@@ -1,3 +1,4 @@
+import { modelCatalog, downloadModel } from './model-download'
 import { parseCatalog } from './catalog'
 import { manageVersions } from './versions'
 import type { PortablePaths } from '../portable/paths'
@@ -186,6 +187,41 @@ export function registerComfyReader(portable: PortablePaths) {
       }
     },
   )
+  let models: ReturnType<typeof modelCatalog> = []
+  let modelRequest: Promise<typeof models> | undefined
+  let modelSettled = false
+  const modelConnection = async (proxy: unknown) => {
+    const value = validateProxy(proxy)
+    const connection = session.fromPartition('model-downloads', { cache: false })
+    await connection.setProxy(value ? { mode: 'fixed_servers', proxyRules: value.replace(/^socks5h:/i, 'socks5:') } : { mode: 'system' })
+    return connection
+  }
+  ipcMain.handle('comfy:model-catalog', async (event, refresh, proxy) => {
+    windowFor(event)
+    if (!modelRequest || refresh === true && modelSettled && !busy) {
+      modelSettled = false
+      modelRequest = (async () => {
+        const connection = await modelConnection(proxy)
+        const response = await connection.fetch('https://raw.githubusercontent.com/Comfy-Org/ComfyUI-Manager/main/model-list.json', { signal: AbortSignal.timeout(30000) })
+        if (!response.ok) throw new Error(`目录获取失败：HTTP ${response.status}`)
+        models = modelCatalog(await response.json()); return models
+      })().finally(() => { modelSettled = true })
+    }
+    return modelRequest
+  })
+  ipcMain.handle('comfy:model-download', async (event, url, proxy) => {
+    windowFor(event)
+    if (busy || runtime.busy || !currentPath) throw new Error('请先停止 ComfyUI，并等待当前操作完成。')
+    const model = models.find(model => model.url === url)
+    if (!model) throw new Error('请先获取模型目录。')
+    busy = true
+    try {
+      const connection = await modelConnection(proxy)
+      return await downloadModel(currentPath, model, url => connection.fetch(url, { signal: AbortSignal.timeout(3600000), credentials: 'omit' }), (received, total) => {
+        if (!event.sender.isDestroyed()) event.sender.send('comfy:progress', { kind: 'source', step: `模型下载：${model.name}`, received, total })
+      })
+    } finally { busy = false }
+  })
   ipcMain.handle('comfy:versions', async (event, action, tag = '', proxy = '') => {
     windowFor(event)
     if (busy || runtime.busy || !currentPath) throw new Error('请先读取目录并停止 ComfyUI。')
