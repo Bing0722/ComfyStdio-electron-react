@@ -25,13 +25,21 @@ export function PluginsPage() {
   useEffect(() => window.comfy?.onPluginProgress(value => {
     if (value.url === installing) setInstallProgress(value.message.trim().split(/[\r\n]/).filter(Boolean).at(-1) || '正在下载…')
   }), [installing])
-  async function operate(action: 'install' | 'dependencies' | 'toggle' | 'delete' | 'check-update', value: string) {
+  async function operate(action: 'install' | 'dependencies' | 'toggle' | 'delete' | 'check-update' | 'check-all' | 'update-all', value: string) {
     if (busy) return
     setBusy(true)
     if (action === 'install') { setInstalling(value); setInstallProgress('准备下载…') }
     setError('')
     try {
       const result = await window.comfy!.managePlugin(action, value, settings.pluginProxy)
+      if (action === 'check-all' || action === 'update-all') {
+        const results = JSON.parse(result || '{}') as Record<string, string>
+        setUpdates(results)
+        if (action === 'update-all') await readComfy('refresh')
+        const failures = Object.values(results).filter(value => value.startsWith('失败')).length
+        notify(`${action === 'check-all' ? '全部检查' : '统一更新'}完成：${Object.keys(results).length} 项，${failures} 项失败。详见列表及运行日志。`)
+        return
+      }
       if (action === 'check-update') {
         const message = result || '检查完成'
         setUpdates(current => ({ ...current, [value]: message }))
@@ -40,7 +48,7 @@ export function PluginsPage() {
       }
       if (action === 'install') setInstallProgress('正在刷新插件列表…')
       await readComfy('refresh')
-      notify(action === 'delete' ? '插件已移入回收站，可重新安装。' : action === 'install' ? '插件文件安装成功，请按需安装依赖后启动 ComfyUI。' : '插件操作完成，下次启动生效。')
+      notify(action === 'delete' ? '插件已移入回收站，可重新安装。' : action === 'install' ? '插件文件安装成功，可在已安装页统一更新并安装依赖。' : '插件操作完成，下次启动生效。')
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error))
       notify(`插件操作失败：${error instanceof Error ? error.message : String(error)}`)
@@ -78,6 +86,7 @@ export function PluginsPage() {
           onChange={(search) => setFilter({ search })}
         />
       </div>
+      <div className="toolbar"><Button disabled={busy || !!readBlockedReason || !Object.keys(comfy.plugins).length} onClick={() => void operate('check-all', '')}>检查全部更新</Button><Button className="button-primary" disabled={busy || !!readBlockedReason || !Object.keys(comfy.plugins).length} onClick={() => void operate('update-all', '')}>统一更新并安装依赖</Button><span role="status">{busy ? '正在处理，请查看运行日志…' : ''}</span></div>
       <Section title="当前插件" count={plugins.length}>
         {!plugins.length ? (
           <EmptyState
@@ -98,14 +107,12 @@ export function PluginsPage() {
                       <span className="disabled-badge">已禁用</span>
                     )}
                   </div>
+                  <p className="installed-plugin-summary">{plugin.description}</p>
                   <div className="row-description">
                     版本 {plugin.version}
                     {updates[plugin.name] && <span> · {updates[plugin.name]}</span>}
                   </div>
                 </div>
-                <Button disabled={busy || !!readBlockedReason} onClick={() => void operate('check-update', plugin.name)}>检查更新</Button>
-                <Button disabled={busy || !!readBlockedReason}
-                  onClick={() => void operate('dependencies', plugin.name)}>安装依赖</Button>
                 <Button disabled={busy || !!readBlockedReason}
                   onClick={() => void operate('toggle', plugin.name)}>
                   {plugin.enabled ? '禁用' : '启用'}
@@ -116,7 +123,7 @@ export function PluginsPage() {
                   onClick={() =>
                     showDialog({
                       title: plugin.name,
-                      text: `位置：${plugin.path}\n版本：${plugin.version}\n实际节点加载结果以运行日志为准。`,
+                      text: `${plugin.description}\n\n位置：${plugin.path}\n版本：${plugin.version}\n实际节点加载结果以运行日志为准。`,
                     })
                   }
                 >

@@ -21,3 +21,5 @@
 
 .plugin-install-progress { height: 62px; overflow: hidden; }
 .plugin-install-progress small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.installed-plugin-summary { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; color: var(--muted); font-size: 13px; line-height: 1.7; margin: 8px 0; }

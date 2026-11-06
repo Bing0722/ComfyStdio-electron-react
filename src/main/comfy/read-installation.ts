@@ -2,6 +2,23 @@ import { readdir, readFile, stat, realpath } from 'node:fs/promises'
 import { join, extname, relative } from 'node:path'
 import type { ComfyInstallation, Model, Plugin } from '../../shared/comfy-api'
 
+const descriptionCache = new Map<string, { signature: string; description: string }>()
+async function pluginDescription(path: string) {
+  for (const name of ['README.md', 'readme.md', 'README.rst', 'README.txt']) {
+    const file = join(path, name)
+    try {
+      const info = await stat(file)
+      const signature = `${info.mtimeMs}:${info.size}`
+      const cached = descriptionCache.get(file)
+      if (cached?.signature === signature) return cached.description
+      const description = (await readSmallFile(file)).replace(/<[^>]*>/g, '').replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/^[#>* -]+/gm, '').trim().slice(0, 6000)
+      if (descriptionCache.size > 500) descriptionCache.clear()
+      descriptionCache.set(file, { signature, description })
+      return description || '该插件未提供用途说明。'
+    } catch {}
+  }
+  return '该插件未提供 README 说明，可打开详情查看本地路径。'
+}
 const modelExtensions = new Set([
   '.safetensors',
   '.ckpt',
@@ -145,7 +162,7 @@ export async function readInstallation(
       plugins[entry.name] = {
         name: entry.name,
         description: entry.isDirectory()
-          ? '本地自定义节点目录'
+          ? await pluginDescription(path)
           : '本地自定义节点文件',
         version: pluginVersion,
         enabled: !entry.name.endsWith('.disabled'),

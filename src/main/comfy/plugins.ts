@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { lstat, mkdir, mkdtemp, rename, rm, realpath } from 'node:fs/promises'
+import { lstat, readdir, mkdir, mkdtemp, rename, rm, realpath } from 'node:fs/promises'
 import { join, dirname, basename } from 'node:path'
 import { resolvePython } from '../runtime/python.ts'
 import { validateProxy } from '../../shared/proxy.ts'
@@ -29,6 +29,18 @@ export async function managePlugin(
   const validated = validateProxy(proxy)
   const directory = join(root, 'custom_nodes')
   await mkdir(directory, { recursive: true })
+  if (action === 'check-all' || action === 'update-all') {
+    const results: Record<string, string> = {}
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      if (entry.name.startsWith('.') || entry.name === '__pycache__' || entry.name.replace(/\.disabled$/, '') === 'websocket_image_save.py') continue
+      if (!entry.isDirectory() || entry.isSymbolicLink()) { results[entry.name] = '跳过：不是独立插件目录'; continue }
+      try {
+        output(`正在处理：${entry.name}`)
+        results[entry.name] = await managePlugin(root, python, action === 'check-all' ? 'check-update' : 'update', entry.name, proxy, output, trash) || '完成'
+      } catch (error) { results[entry.name] = `失败：${error instanceof Error ? error.message : String(error)}`; output(results[entry.name]) }
+    }
+    return JSON.stringify(results)
+  }
   if (action === 'install') {
     const url = new URL(value)
     if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash)
@@ -58,7 +70,7 @@ export async function managePlugin(
   if (info.isSymbolicLink() || dirname(await realpath(path)) !== await realpath(directory))
     throw new Error('不支持修改目录外的插件。')
   if (value.replace(/\.disabled$/, '') === 'websocket_image_save.py') throw new Error('这是 ComfyUI 内置文件，不作为插件管理。')
-  if (action === 'check-update') {
+  if (action === 'check-update' || action === 'update') {
     if (!info.isDirectory()) throw new Error('单文件插件不支持 Git 更新检查。')
     const git = (args: string[]) => new Promise<string>((resolve, reject) => execFile('git', args, { cwd: path, windowsHide: true, timeout: 120000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }, (error, stdout, stderr) => error ? reject(new Error(stderr || error.message)) : resolve(stdout.trim())))
     if (await realpath(await git(['rev-parse', '--show-toplevel'])) !== await realpath(path)) throw new Error('该插件没有独立 Git 仓库，无法检查更新。')
@@ -71,6 +83,18 @@ export async function managePlugin(
     await git([...(validated ? ['-c', `http.proxy=${validated}`] : []), 'fetch', '--no-tags', url, merge])
     const [ahead, behind] = (await git(['rev-list', '--left-right', '--count', 'HEAD...FETCH_HEAD'])).split(/\s+/).map(Number)
     const message = behind ? `有更新：落后 ${behind} 个提交${ahead ? `，本地另有 ${ahead} 个提交` : ''}` : '当前分支没有可用更新'
+    if (action === 'update') {
+      if (await git(['status', '--porcelain'])) throw new Error('存在本地改动，未更新。')
+      if (ahead && behind) throw new Error('本地与远端已分叉，未更新。')
+      if (behind) await git(['-c', 'core.hooksPath=', 'merge', '--ff-only', 'FETCH_HEAD'])
+      if (await lstat(join(path, 'requirements.txt')).catch(() => null)) {
+        output(`安装依赖：${value}`)
+        try { await managePlugin(root, python, 'dependencies', value, proxy, output) }
+        catch (error) { throw new Error(`代码已同步，但依赖安装失败：${error instanceof Error ? error.message : String(error)}`) }
+      }
+      output(`更新与依赖处理完成：${value}`)
+      return '代码与依赖已同步'
+    }
     output(message)
     return message
   }

@@ -250,7 +250,7 @@ export function registerComfyReader(portable: PortablePaths) {
     windowFor(event)
     if (busy || runtime.busy || !currentPath)
       throw new Error('请先读取 ComfyUI 并停止运行中的程序。')
-    if (!['install', 'dependencies', 'toggle', 'delete', 'check-update'].includes(action) ||
+    if (!['install', 'dependencies', 'toggle', 'delete', 'check-update', 'check-all', 'update-all'].includes(action) ||
         typeof value !== 'string' || typeof proxy !== 'string')
       throw new Error('插件操作参数无效。')
     busy = true
