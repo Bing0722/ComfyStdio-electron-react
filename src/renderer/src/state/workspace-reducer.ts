@@ -9,6 +9,10 @@ export function workspaceReducer(
   state: WorkspaceState,
   action: WorkspaceAction,
 ): WorkspaceState {
+  if (action.type === 'comfy/python-selected') {
+    if (state.comfy?.path !== action.path) return state
+    return { ...state, comfy: { ...state.comfy, selectedPython: action.python } }
+  }
   if (action.type === 'runtime/live')
     return { ...state, runtime: { status: action.status } }
   if (action.type === 'comfy/read-start') {
@@ -31,8 +35,12 @@ export function workspaceReducer(
   if (action.type === 'comfy/read-failure')
     return {
       ...state,
-      comfy: null,
-      read: { ...state.read, phase: 'failed', error: action.error },
+      comfy: action.preserve ? state.comfy : null,
+      read: {
+        ...state.read,
+        phase: action.preserve && state.comfy ? 'ready' : 'failed',
+        error: action.error,
+      },
     }
   return {
     ...state,

@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import type { RunMode } from '../../../../shared/runtime-api'
+import { usePreferences } from '../settings/PreferencesProvider'
+import { Switch } from '../../components/ui/Switch'
+import { AcquisitionButtons } from './AcquisitionButtons'
 import { Surface } from '../../components/ui/Surface'
 import { Button } from '../../components/ui/Button'
 import { Section, Status } from '../../components/ui/Section'
@@ -9,26 +10,29 @@ import { useFeedback } from '../../components/ui/FeedbackProvider'
 import { ComfyContext } from './ComfyContext'
 export function LaunchPage() {
   const comfy = useComfy()
-  const { state, readComfy, readBlockedReason, liveRuntime } = useWorkspace()
+  const {
+    state,
+    readComfy,
+    readBlockedReason,
+    liveRuntime,
+    launchPending: pending,
+    operateRuntime,
+  } = useWorkspace()
+  const { runMode, setRunMode, portableCpu, setPortableCpu } = usePreferences()
   const { showDialog, notify } = useFeedback()
-  const [mode, setMode] = useState<RunMode>('API 服务')
-  const [pending, setPending] = useState(false)
-  const [python, setPython] = useState('')
   const status =
     liveRuntime.path === comfy.path ? liveRuntime.status : state.runtime.status
   const running = ['启动中', '运行中', '停止中'].includes(status)
-  async function operate(action: 'start' | 'restart' | 'stop') {
-    setPending(true)
+  const usesEmbeddedPython =
+    comfy.embeddedPython &&
+    (!comfy.selectedPython || comfy.selectedPython === comfy.embeddedPython)
+  async function operate(action: Parameters<typeof operateRuntime>[0]) {
     try {
-      if (!window.runtime) throw new Error('请使用桌面应用')
-      if (action === 'stop') await window.runtime.stop()
-      else await window.runtime[action](mode)
+      await operateRuntime(action)
     } catch (error) {
       notify(
         error instanceof Error ? error.message : '操作失败，请查看运行日志',
       )
-    } finally {
-      setPending(false)
     }
   }
   return (
@@ -42,7 +46,9 @@ export function LaunchPage() {
           </div>
           <Status value={status} />
         </div>
-        <p className="launch-version">{comfy.version} · 本地程序</p>
+        <p className="launch-version">
+          {comfy.version} · {comfy.embeddedPython ? '便携版' : '本地程序'}
+        </p>
         <div className="setting-row">
           <div>
             <h3>启动方式</h3>
@@ -50,9 +56,9 @@ export function LaunchPage() {
           </div>
           <Select
             label="启动方式"
-            value={mode}
+            value={runMode}
             options={['API 服务', '打开网页']}
-            onChange={setMode}
+            onChange={setRunMode}
           />
         </div>
         <p className="footnote">
@@ -84,35 +90,40 @@ export function LaunchPage() {
           </div>
         </div>
       </Surface>
-      {
-        <Section
-          title="Python 环境"
-          action={
-            <Button
-              disabled={running || pending}
-              onClick={async () => {
-                try {
-                  const selected = await window.runtime?.choosePython()
-                  if (selected) setPython(selected)
-                } catch (error) {
-                  notify(String(error))
-                }
-              }}
-            >
-              选择 Python
-            </Button>
-          }
-        >
-          <p className="footnote">
-            {python ||
-              (liveRuntime.path === comfy.path ? liveRuntime.python : '') ||
-              '自动查找 .venv、venv、便携版 Python；未找到时使用系统 Python。'}
-          </p>
-          <p className="footnote">
-            所选环境需要已安装 ComfyUI 依赖。选择其他启动方式后，重启生效。
-          </p>
-        </Section>
-      }
+      <Section
+        title="Python 环境"
+        action={
+          <Button
+            disabled={running || pending}
+            onClick={() => void operate('choosePython')}
+          >
+            选择 Python
+          </Button>
+        }
+      >
+        <p className="footnote">
+          {comfy.selectedPython ||
+            comfy.embeddedPython ||
+            (liveRuntime.path === comfy.path ? liveRuntime.python : '') ||
+            '自动查找 .venv、venv；未找到时使用系统 Python。'}
+        </p>
+        {usesEmbeddedPython && (
+          <div className="setting-row">
+            <div>
+              <h3>仅使用 CPU</h3>
+              <p>无兼容 GPU 时可启用。下次启动或重启时生效。</p>
+            </div>
+            <Switch
+              label="仅使用 CPU"
+              checked={portableCpu}
+              onChange={setPortableCpu}
+            />
+          </div>
+        )}
+        <p className="footnote">
+          手动选择的 Python 需已安装 ComfyUI 依赖。启动方式和环境设置在下次启动或重启时生效。
+        </p>
+      </Section>
       <Section title="程序内容">
         <dl className="comfy-paths">
           <div>
@@ -125,7 +136,9 @@ export function LaunchPage() {
           </div>
         </dl>
       </Section>
+      {state.read.error && <p className="error-text" role="alert">{state.read.error}</p>}
       <div className="comfy-replace">
+        <AcquisitionButtons />
         <Button
           disabled={Boolean(readBlockedReason) || pending}
           title={readBlockedReason}

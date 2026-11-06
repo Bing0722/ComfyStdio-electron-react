@@ -4,10 +4,13 @@ import { existsSync } from 'node:fs'
 import { registerRuntime } from '../runtime/register-runtime'
 import { join } from 'node:path'
 import { validateProxy } from '../../shared/proxy'
+import { acquirePortable } from './acquire-portable'
+import { findEmbeddedPython } from '../runtime/python'
 import { acquireComfy } from './acquire'
 import {
   BrowserWindow,
   shell,
+  session,
   dialog,
   ipcMain,
   type IpcMainInvokeEvent,
@@ -32,14 +35,22 @@ export function registerComfyReader(portable: PortablePaths) {
     if (!window) throw new Error('Window is unavailable')
     return window
   }
-  const scan = async (path: string): Promise<ComfyReadResult> => {
+  const scan = async (path: string, signal?: AbortSignal): Promise<ComfyReadResult> => {
     try {
       const installation = await readInstallation(path)
+      const embeddedPython = await findEmbeddedPython(installation.path)
+      if (signal?.aborted) return { status: 'cancelled' }
       saveCurrentPath(portable, installation.path)
       currentPath = installation.path
-      return { status: 'ready', installation }
+      return {
+        status: 'ready',
+        installation: {
+          ...installation,
+          embeddedPython,
+          selectedPython: runtime.selectedPython(installation.path),
+        },
+      }
     } catch (error) {
-      currentPath = null
       return {
         status: 'failed',
         error:
@@ -71,30 +82,61 @@ export function registerComfyReader(portable: PortablePaths) {
   )
   ipcMain.handle(
     'comfy:acquire',
-    async (event, proxy: unknown = ''): Promise<ComfyReadResult> => {
+    async (event, kind: unknown, proxy: unknown = ''): Promise<ComfyReadResult> => {
       const window = windowFor(event)
       if (busy || runtime.busy)
         return { status: 'failed', error: '正在处理 ComfyUI，请稍后重试。' }
+      if (kind !== 'source' && kind !== 'portable' && kind !== 'both')
+        return { status: 'failed', error: '未知的 ComfyUI 获取类型。' }
+      if (
+        kind !== 'source' &&
+        (process.platform !== 'win32' || process.arch !== 'x64')
+      )
+        return { status: 'failed', error: '此便携包适用于 Windows x64。' }
       busy = true
       const controller = new AbortController()
       acquisition = controller
-      const cancel = () => controller.abort()
-      window.once('closed', cancel)
+      let closeRequested = false
+      const cancelOnClose = (event: Electron.Event) => {
+        event.preventDefault()
+        closeRequested = true
+        controller.abort()
+      }
+      window.on('close', cancelOnClose)
       try {
         const validated = validateProxy(proxy)
-        if (controller.signal.aborted) return { status: 'cancelled' }
-        const path = await acquireComfy(
-          portable.root,
-          controller.signal,
-          undefined,
-          validated,
-        )
-        const result = await scan(path)
-        if (result.status === 'ready')
-          result.installation.warnings.push(
-            '已获取官方程序源码；请先配置 Python、PyTorch 和运行依赖，再启动 ComfyUI。',
+        const source = async () => {
+          if (!existsSync(portable.comfy))
+            return acquireComfy(portable.root, controller.signal, undefined, validated)
+          if (kind === 'both') await readInstallation(portable.comfy)
+          return portable.comfy
+        }
+        const standalone = async () => {
+          const downloads = session.fromPartition('comfy-download', { cache: false })
+          await downloads.setProxy(
+            validated
+              ? { mode: 'fixed_servers', proxyRules: validated.replace(/^socks5h:/i, 'socks5:') }
+              : { mode: 'direct' },
           )
-        return result
+          await downloads.closeAllConnections()
+          return acquirePortable(
+            portable.comfyPortable,
+            controller.signal,
+            (url, options) => downloads.fetch(url, { ...options, credentials: 'omit' }),
+          )
+        }
+        let path: string
+        if (kind === 'both') {
+          const [sourceResult, portableResult] = await Promise.allSettled([
+            source(),
+            standalone(),
+          ])
+          if (portableResult.status === 'rejected') throw portableResult.reason
+          if (sourceResult.status === 'rejected') throw sourceResult.reason
+          path = portableResult.value
+        } else path = await (kind === 'source' ? source() : standalone())
+        if (controller.signal.aborted) return { status: 'cancelled' }
+        return await scan(path, controller.signal)
       } catch (error) {
         return controller.signal.aborted
           ? { status: 'cancelled' }
@@ -104,9 +146,10 @@ export function registerComfyReader(portable: PortablePaths) {
                 error instanceof Error ? error.message : '获取失败，请重试。',
             }
       } finally {
-        window.removeListener('closed', cancel)
+        window.removeListener('close', cancelOnClose)
         acquisition = null
         busy = false
+        if (closeRequested && !window.isDestroyed()) window.close()
       }
     },
   )
@@ -138,7 +181,9 @@ export function registerComfyReader(portable: PortablePaths) {
         return { status: 'failed', error: '正在读取 ComfyUI，请稍后重试。' }
       busy = true
       try {
-        return await scan(currentPath)
+        const result = await scan(currentPath)
+        if (result.status === 'failed') currentPath = null
+        return result
       } finally {
         busy = false
       }

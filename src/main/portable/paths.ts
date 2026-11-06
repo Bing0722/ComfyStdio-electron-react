@@ -17,6 +17,7 @@ export function preparePortable(root: string) {
     root: resolved,
     data: join(resolved, 'Data'),
     comfy: join(resolved, 'ComfyUI'),
+    comfyPortable: join(resolved, 'ComfyUI_windows_portable'),
     userData: join(resolved, 'Data/profile'),
     sessionData: join(resolved, 'Data/session'),
     temp: join(resolved, 'Data/temp'),
@@ -26,7 +27,7 @@ export function preparePortable(root: string) {
     cache: join(resolved, 'Data/cache'),
   }
   for (const [key, path] of Object.entries(paths))
-    if (!['root', 'comfy'].includes(key)) {
+    if (!['root', 'comfy', 'comfyPortable'].includes(key)) {
       mkdirSync(path, { recursive: true })
       accessSync(path, constants.W_OK)
     }

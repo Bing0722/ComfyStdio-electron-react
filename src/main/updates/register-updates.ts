@@ -7,7 +7,7 @@ import {
   type IpcMainInvokeEvent,
 } from 'electron'
 import { join } from 'node:path'
-import { saveUpdate } from './download'
+import { saveVerifiedDownload } from '../portable/verified-download'
 import type { PortablePaths } from '../portable/paths'
 import type { UpdateInfo } from '../../shared/application-api'
 import { newerVersion, selectAsset, type ReleaseAsset } from './release'
@@ -101,7 +101,7 @@ export function registerUpdates(paths: PortablePaths) {
       const response = await net.fetch(selected.browser_download_url, {
         signal: AbortSignal.timeout(600000),
       })
-      return await saveUpdate(response, selected, file)
+      return await saveVerifiedDownload(response, selected, file)
     } finally {
       busy = false
     }

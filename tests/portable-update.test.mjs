@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, rm, readFile, access } from 'node:fs/promises'
+import { mkdtemp, rm, readFile, access, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
@@ -15,7 +15,8 @@ import {
   selectAsset,
   releaseBase,
 } from '../src/main/updates/release.ts'
-import { saveUpdate } from '../src/main/updates/download.ts'
+import { saveVerifiedDownload } from '../src/main/portable/verified-download.ts'
+import { pythonSelections } from '../src/main/runtime/python-selections.ts'
 test('portable state and standard caches stay under application folder, relative context survives relocation', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'comfy-portable-'))
   t.after(() => rm(root, { recursive: true, force: true }))
@@ -90,11 +91,28 @@ test('verified downloads become archives; digest mismatch removes partial conten
     size: bytes.length,
     digest: 'sha256:' + createHash('sha256').update(bytes).digest('hex'),
   }
-  await saveUpdate(new Response(bytes), asset, file)
+  await saveVerifiedDownload(new Response(bytes), asset, file)
   assert.equal(await readFile(file, 'utf8'), 'zip fixture')
   await assert.rejects(
-    saveUpdate(new Response(Buffer.from('bad fixture')), asset, file),
+    saveVerifiedDownload(new Response(Buffer.from('bad fixture')), asset, file),
   )
   assert.equal(await readFile(file, 'utf8'), 'zip fixture')
   await assert.rejects(access(file + '.part'))
+})
+
+test('legacy Python selection survives migration, switching installations and relocation', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'comfy-python-selections-'))
+  t.after(() => rm(root, { recursive: true, force: true }))
+  const paths = preparePortable(root)
+  const inside = join('ComfyUI', '.venv', 'python')
+  const external = join(root, '..', 'external-comfy')
+  const externalPython = join(external, 'python')
+  await writeFile(join(paths.data, 'python.json'), JSON.stringify({ root: 'ComfyUI', python: inside }))
+  const selections = pythonSelections(paths)
+  assert.equal(selections.get(paths.comfy), join(paths.root, inside))
+  selections.save(external, externalPython)
+  const moved = join(paths.root, 'moved')
+  const restored = pythonSelections({ ...paths, root: moved })
+  assert.equal(restored.get(join(moved, 'ComfyUI')), join(moved, inside))
+  assert.equal(restored.get(external), externalPython)
 })

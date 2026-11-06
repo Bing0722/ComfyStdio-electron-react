@@ -24,13 +24,16 @@ export interface ComfyInstallation {
   models: Model[]
   plugins: Record<string, Plugin>
   warnings: string[]
+  embeddedPython?: string
+  selectedPython?: string
 }
 export type ComfyReadResult =
   | { status: 'ready'; installation: ComfyInstallation }
   | { status: 'cancelled' }
   | { status: 'failed'; error: string }
+export type AcquisitionKind = 'source' | 'portable' | 'both'
 export interface ComfyAPI {
-  acquire: (proxy?: string) => Promise<ComfyReadResult>
+  acquire: (kind: AcquisitionKind, proxy?: string) => Promise<ComfyReadResult>
   openFolder: (kind: 'program' | 'models' | 'plugins') => Promise<string>
   cancelAcquire: () => Promise<void>
   chooseAndRead: () => Promise<ComfyReadResult>

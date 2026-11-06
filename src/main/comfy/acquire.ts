@@ -8,6 +8,7 @@ export async function acquireComfy(
   clone = cloneOfficial,
   proxy = '',
 ) {
+  signal.throwIfAborted()
   const validated = validateProxy(proxy)
   const destination = join(parent, 'ComfyUI')
   await mkdir(destination).catch(() => {
@@ -15,6 +16,7 @@ export async function acquireComfy(
   })
   try {
     await clone(destination, signal, validated)
+    signal.throwIfAborted()
     return destination
   } catch (error) {
     await rm(destination, { recursive: true, force: true })

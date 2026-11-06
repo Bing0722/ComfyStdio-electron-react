@@ -35,6 +35,7 @@ export type WorkspaceAction =
       requestId: number
       installation: ComfyInstallation
     }
-  | { type: 'comfy/read-failure'; requestId: number; error: string }
+  | { type: 'comfy/read-failure'; requestId: number; error: string; preserve?: boolean }
   | { type: 'comfy/read-cancel'; requestId: number }
+  | { type: 'comfy/python-selected'; path: string; python: string }
   | { type: 'runtime/live'; status: RuntimeStatus }

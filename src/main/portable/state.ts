@@ -18,10 +18,11 @@ export function readCurrentPath(paths: PortablePaths) {
   }
 }
 export function saveCurrentPath(paths: PortablePaths, path: string) {
-  const file = join(paths.data, 'workspace.json')
-  writeFileSync(
-    file + '.tmp',
-    JSON.stringify({ comfy: storedPath(paths.root, path) }, null, 2),
-  )
+  writeConfig(join(paths.data, 'workspace.json'), {
+    comfy: storedPath(paths.root, path),
+  })
+}
+export function writeConfig(file: string, data: object) {
+  writeFileSync(file + '.tmp', JSON.stringify(data, null, 2))
   renameSync(file + '.tmp', file)
 }

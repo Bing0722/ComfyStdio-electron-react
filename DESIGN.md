@@ -1,4 +1,4 @@
-# 当前设计与验收（0.7.0）
+# 当前设计与验收（0.8.0）
 
 ## 产品行为
 
@@ -12,7 +12,9 @@
 
 Windows/Linux 根目录为可执行文件所在目录；macOS 为 `.app` 所在目录。开发根目录默认项目目录，测试可设置 `COMFYSTDIO_PORTABLE_ROOT`（仅开发模式生效）。Data 在 ready 前承接 Electron 配置、会话、缓存、临时目录与崩溃目录。不可写则提示退出，不静默回退系统用户目录。
 
-Git 获取只能在根目录创建 ComfyUI，不再弹出目标选择。已有目录拒绝覆盖；失败/取消清理本次创建内容。当前目录和 Python 选择保存为内部相对路径或用户导入的外部绝对路径。系统驱动和第三方工具的所有外部行为不在便携隔离承诺内。
+源码固定在根目录的 ComfyUI；Windows x64 官方便携包固定在 ComfyUI_windows_portable，独立保留 Python 和程序文件。可单独或并行获取；两者都就绪后选中便携版。已有完整目录直接复用。便携包只接受官方发布资产，流式核对大小与 SHA-256，使用 Windows 内置 tar 解压，在校验文件结构后移动到目标目录。失败或取消清理暂存文件，保留已安装的版本。系统驱动和第三方工具的外部行为由各工具管理。
+
+当前目录和每个程序选择的 Python 保存为内部相对路径或外部绝对路径，兼容旧版单条 Python 配置。启动方式和便携版 CPU 选项由 Data 内的 Electron 配置保存，切页和重开时恢复。进程状态和在途操作从当前会话读取。
 
 ## 更新约束
 
@@ -24,9 +26,11 @@ Git 获取只能在根目录创建 ComfyUI，不再弹出目标选择。已有�
 
 - `npm run build`：类型检查与打包。
 - `npm test`：真实目录扫描、读取取消/失败/过期、进程启动/重启/停止、API 就绪、日志、代理校验、便携路径与相对恢复、版本选择和下载摘要失败清理。
-- 桌面：无演示文字/入口；液态旧偏好 false 仍固定开启；Electron 各数据路径位于 Data；实际官方版本检查；受控 release 响应验证更新下载与显示；真实 Git 获取固定到根目录 ComfyUI；重新打开恢复读取。
+- 桌面：无演示文字/入口；液态旧偏好 false 仍固定开启；Electron 各数据路径位于 Data；实际官方版本检查；受控 release 响应验证更新下载与显示；源码与便携版分别保存；两种获取方式可并行执行；切页、刷新、切换目录和重开后验证启动偏好及 Python 路径。
 - ZIP：检查 Windows 包包含 exe 和 app.asar，不包含 Data/ComfyUI。Windows 原生运行及 GPU 推理需 Windows 真机，macOS 检查不能代替。
 
 实现依据：[Electron app 路径](https://www.electronjs.org/docs/latest/api/app)、[electron-builder Windows ZIP 目标](https://www.electron.build/v26/docs/win/)。
 
 2026-11-06 验证结果：构建及 18 项自动测试通过；实际官方更新接口返回暂无 Release；真实官方 ComfyUI 固定目录获取成功；受控更新响应的下载与 SHA-256 校验通过。Windows x64 ZIP 已生成并检查内容。实际打包的 macOS 应用整体移动后，当前 ComfyUI、主题、代理和 Data 路径恢复正常。Windows ZIP 尚未在 Windows 真机启动验证。
+
+0.8.0 验证结果（2026-11-06）：构建和 21 项自动测试通过。macOS 桌面验证了切页、切换目录、重开后恢复网页模式和各目录的 Python，并启动受控 API 进程。在受控 Windows 平台与发布响应下，桌面通过双版本获取入口校验和解压真实 7z 样本，选中便携版并显示内置 Python，切页后保留 CPU 选项。官方发布接口已核对标准 Windows x64 资产的名称、大小和摘要。Windows x64 ZIP 已构建并检查内容。完整官方便携包的 Windows 原生启动和 GPU 推理仍需真机验证。

@@ -1,9 +1,10 @@
 import { spawn, execFile, type ChildProcess } from 'node:child_process'
 import { access } from 'node:fs/promises'
-import { join, dirname } from 'node:path'
+import { join } from 'node:path'
 import { createServer } from 'node:net'
 import { get } from 'node:http'
 import { StringDecoder } from 'node:string_decoder'
+import { resolvePython } from './python.ts'
 import type { RunMode, RuntimeSnapshot } from '../../shared/runtime-api'
 export function logLevel(message: string): '信息' | '警告' | '异常' {
   if (/error|exception|traceback|failed|错误|异常/i.test(message)) return '异常'
@@ -60,19 +61,24 @@ export class RuntimeService {
     this.serial = task.catch(() => {})
     return task
   }
-  start(path: string, mode: RunMode, python?: string) {
-    return this.queue(() => this.launch(path, mode, python))
+  start(path: string, mode: RunMode, python?: string, portableCpu = false) {
+    return this.queue(() => this.launch(path, mode, python, portableCpu))
   }
-  restart(path: string, mode: RunMode, python?: string) {
+  restart(path: string, mode: RunMode, python?: string, portableCpu = false) {
     return this.queue(async () => {
       await this.terminate()
-      await this.launch(path, mode, python)
+      await this.launch(path, mode, python, portableCpu)
     })
   }
   stop() {
     return this.queue(() => this.terminate())
   }
-  private async launch(path: string, mode: RunMode, selected?: string) {
+  private async launch(
+    path: string,
+    mode: RunMode,
+    selected: string | undefined,
+    portableCpu: boolean,
+  ) {
     if (this.busy) throw new Error('ComfyUI 已在运行或正在切换状态')
     if (!['API 服务', '打开网页'].includes(mode))
       throw new Error('未知启动模式')
@@ -91,25 +97,7 @@ export class RuntimeService {
           server.close(() => resolve()),
         )
       })
-      let python = selected
-      if (!python) {
-        const candidates =
-          process.platform === 'win32'
-            ? [
-                join(path, '.venv/Scripts/python.exe'),
-                join(path, 'venv/Scripts/python.exe'),
-                join(dirname(path), 'python_embeded/python.exe'),
-              ]
-            : [join(path, '.venv/bin/python'), join(path, 'venv/bin/python')]
-        for (const candidate of candidates) {
-          try {
-            await access(candidate)
-            python = candidate
-            break
-          } catch {}
-        }
-      }
-      python ??= process.platform === 'win32' ? 'python' : 'python3'
+      const { executable: python, embedded } = await resolvePython(path, selected)
       this.state.python = python
       this.log(`启动 ${path} · ${mode} · Python: ${python}`)
       this.stopRequested = false
@@ -117,12 +105,15 @@ export class RuntimeService {
         python,
         [
           '-u',
+          ...(embedded ? ['-s'] : []),
           'main.py',
           '--listen',
           '127.0.0.1',
           '--port',
           String(this.port),
           '--disable-auto-launch',
+          ...(embedded ? ['--windows-standalone-build'] : []),
+          ...(embedded && portableCpu ? ['--cpu'] : []),
         ],
         {
           cwd: path,

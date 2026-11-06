@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
-import { storedPath } from '../portable/state'
+import { basename, dirname, join } from 'node:path'
+import { existsSync, realpathSync } from 'node:fs'
+import { pythonSelections } from './python-selections'
 import { runtimeEnvironment, type PortablePaths } from '../portable/paths'
 import {
   app,
@@ -18,16 +18,8 @@ export function registerRuntime(
   reading: () => boolean,
   portable: PortablePaths,
 ) {
-  let python: string | undefined
-  let pythonRoot: string | null = null
-  const pythonConfig = join(portable.data, 'python.json')
-  try {
-    const saved = JSON.parse(readFileSync(pythonConfig, 'utf8'))
-    if (typeof saved.python === 'string' && typeof saved.root === 'string') {
-      python = resolve(portable.root, saved.python)
-      pythonRoot = resolve(portable.root, saved.root)
-    }
-  } catch {}
+  const selections = pythonSelections(portable)
+  let choosing = false
   const service = new RuntimeService(
     (state) => {
       for (const window of BrowserWindow.getAllWindows())
@@ -48,17 +40,20 @@ export function registerRuntime(
     return service.state
   })
   for (const action of ['start', 'restart'] as const)
-    ipcMain.handle(`runtime:${action}`, async (event, mode: RunMode) => {
+    ipcMain.handle(`runtime:${action}`, async (event, mode: RunMode, portableCpu: unknown) => {
       caller(event)
       const path = current()
-      if (!path || reading()) throw new Error('请先读取本地 ComfyUI')
+      if (!path || reading() || choosing) throw new Error('请先读取本地 ComfyUI')
       if (mode !== 'API 服务' && mode !== '打开网页')
         throw new Error('未知启动模式')
-      await service[action](
-        path,
-        mode,
-        pythonRoot === path ? python : undefined,
+      const selected = selections.get(path)
+      if (
+        !selected &&
+        path === join(portable.comfyPortable, 'ComfyUI') &&
+        !existsSync(join(portable.comfyPortable, 'python_embeded', 'python.exe'))
       )
+        throw new Error('便携包缺少自带的 Python，请检查程序目录。')
+      await service[action](path, mode, selected, portableCpu === true)
     })
   ipcMain.handle('runtime:stop', async (event) => {
     caller(event)
@@ -66,33 +61,26 @@ export function registerRuntime(
   })
   ipcMain.handle('runtime:choose-python', async (event) => {
     const window = caller(event)
-    if (service.busy || reading()) throw new Error('请先停止程序并完成读取')
+    if (service.busy || reading() || choosing)
+      throw new Error('请先停止程序并完成读取')
     const path = current()
     if (!path) throw new Error('请先读取本地 ComfyUI')
-    const result = await dialog.showOpenDialog(window, {
-      title: '选择 ComfyUI 环境的 Python 可执行文件',
-      properties: ['openFile'],
-    })
-    if (result.canceled) return null
-    if (service.busy || reading() || current() !== path)
-      throw new Error('程序状态已变化，请重新选择')
-    python = result.filePaths[0]
-    pythonRoot = path
-    writeFileSync(
-      pythonConfig,
-      JSON.stringify(
-        {
-          python: storedPath(portable.root, python),
-          root: storedPath(portable.root, path),
-        },
-        null,
-        2,
-      ),
-    )
-    service.state.python = python
-    service.state.path = path
-    service.log(`已选择 Python：${python}`)
-    return python
+    choosing = true
+    try {
+      const result = await dialog.showOpenDialog(window, {
+        title: '选择 ComfyUI 环境的 Python 可执行文件',
+        properties: ['openFile'],
+      })
+      const selected = result.filePaths[0]
+      if (result.canceled || !selected) return null
+      // Resolve directory aliases without following a virtualenv's interpreter symlink.
+      const python = join(realpathSync(dirname(selected)), basename(selected))
+      selections.save(path, python)
+      service.log(`已选择 Python：${python}`)
+      return python
+    } finally {
+      choosing = false
+    }
   })
   ipcMain.handle('runtime:export', async (event) => {
     const window = caller(event)
@@ -129,5 +117,8 @@ export function registerRuntime(
         quitting = false
       })
   })
-  return service
+  return {
+    get busy() { return service.busy || choosing },
+    selectedPython: selections.get,
+  }
 }

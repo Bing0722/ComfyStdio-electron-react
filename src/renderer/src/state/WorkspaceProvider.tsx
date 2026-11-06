@@ -13,21 +13,25 @@ import {
 import { createWorkspace } from './initial-state'
 import { contextLockReason, workspaceReducer } from './workspace-reducer'
 import type { Filter, PageId, WorkspaceAction, WorkspaceState } from './types'
-import type { ComfyReadResult } from '../../../shared/comfy-api'
+import type { AcquisitionKind, ComfyReadResult } from '../../../shared/comfy-api'
+type ReadMode = 'choose' | 'refresh' | AcquisitionKind
+type RuntimeAction = 'start' | 'restart' | 'stop' | 'choosePython'
 interface WorkspaceContextValue {
   state: WorkspaceState
   dispatch: Dispatch<WorkspaceAction>
   filters: Partial<Record<PageId, Filter>>
   updateFilter: (page: PageId, update: Partial<Filter>) => void
-  readComfy: (mode: 'choose' | 'refresh' | 'acquire') => Promise<void>
+  readComfy: (mode: ReadMode) => Promise<void>
+  operateRuntime: (action: RuntimeAction) => Promise<void>
+  launchPending: boolean
   liveRuntime: RuntimeSnapshot
-  acquiring: boolean
+  acquiring: AcquisitionKind | null
   readBlockedReason: string
 }
 const Context = createContext<WorkspaceContextValue | null>(null)
 const emptyFilter: Filter = { search: '', type: '全部类型' }
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const { settings } = usePreferences()
+  const { settings, runMode, portableCpu } = usePreferences()
   const [state, dispatch] = useReducer(
     workspaceReducer,
     undefined,
@@ -57,15 +61,35 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       off()
     }
   }, [])
-  const [acquiring, setAcquiring] = useState(false)
+  const [acquiring, setAcquiring] = useState<AcquisitionKind | null>(null)
+  const [launchPending, setLaunchPending] = useState(false)
+  const operating = useRef(false)
   const requestId = useRef(0)
   const reading = useRef(false)
   const stateRef = useRef(state)
   stateRef.current = state
-  const readComfy = async (mode: 'choose' | 'refresh' | 'acquire') => {
-    if (reading.current || contextLockReason(stateRef.current)) return
+  const operateRuntime = async (action: RuntimeAction) => {
+    if (operating.current || reading.current) return
+    const path = stateRef.current.comfy?.path
+    if (!window.runtime || !path) throw new Error('请先读取本地 ComfyUI')
+    operating.current = true
+    setLaunchPending(true)
+    try {
+      if (action === 'choosePython') {
+        const python = await window.runtime.choosePython()
+        if (python) dispatch({ type: 'comfy/python-selected', path, python })
+      } else if (action === 'stop') await window.runtime.stop()
+      else await window.runtime[action](runMode, portableCpu)
+    } finally {
+      operating.current = false
+      setLaunchPending(false)
+    }
+  }
+  const readComfy = async (mode: ReadMode) => {
+    if (operating.current || reading.current || contextLockReason(stateRef.current)) return
     reading.current = true
-    setAcquiring(mode === 'acquire')
+    const acquisition = mode !== 'choose' && mode !== 'refresh' ? mode : null
+    setAcquiring(acquisition)
     const id = ++requestId.current
     dispatch({ type: 'comfy/read-start', requestId: id })
     try {
@@ -73,8 +97,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (!window.comfy)
         result = { status: 'failed', error: '请在桌面应用中读取 ComfyUI。' }
       else
-        result = await (mode === 'acquire'
-          ? window.comfy.acquire(settings.programProxy)
+        result = await (acquisition
+          ? window.comfy.acquire(acquisition, settings.programProxy)
           : mode === 'choose'
             ? window.comfy.chooseAndRead()
             : window.comfy.readCurrent())
@@ -90,6 +114,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           type: 'comfy/read-failure',
           requestId: id,
           error: result.error,
+          preserve: mode !== 'refresh',
         })
       else dispatch({ type: 'comfy/read-cancel', requestId: id })
     } catch {
@@ -97,10 +122,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         type: 'comfy/read-failure',
         requestId: id,
         error: '读取 ComfyUI 失败，请重试。',
+        preserve: mode !== 'refresh',
       })
     } finally {
       reading.current = false
-      setAcquiring(false)
+      setAcquiring(null)
     }
   }
   useEffect(() => {
@@ -121,7 +147,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         readComfy,
         acquiring,
         liveRuntime,
-        readBlockedReason: contextLockReason(state),
+        operateRuntime,
+        launchPending,
+        readBlockedReason: contextLockReason(state) || (launchPending ? '正在处理启动操作。' : ''),
       }}
     >
       {children}

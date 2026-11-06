@@ -3,23 +3,23 @@ import { rm, rename } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import type { ReleaseAsset } from './release'
-export async function saveUpdate(
+export async function saveVerifiedDownload(
   response: Response,
-  asset: ReleaseAsset,
+  asset: { size: number; digest: string },
   file: string,
+  signal?: AbortSignal,
 ) {
   const partial = file + '.part'
   try {
     if (!response.ok || !response.body)
-      throw new Error('更新包下载失败，请重试')
+      throw new Error('下载文件下载失败，请重试')
     const hash = createHash('sha256')
     let size = 0
     const meter = new Transform({
       transform(chunk, _encoding, callback) {
         size += chunk.length
         if (size > asset.size) {
-          callback(new Error('更新包大小不符'))
+          callback(new Error('下载文件大小不符'))
           return
         }
         hash.update(chunk)
@@ -30,9 +30,11 @@ export async function saveUpdate(
       Readable.fromWeb(response.body as never),
       meter,
       createWriteStream(partial),
+      { signal },
     )
     if (size !== asset.size || `sha256:${hash.digest('hex')}` !== asset.digest)
-      throw new Error('更新包校验失败，未保留该文件')
+      throw new Error('下载文件校验失败，未保留该文件')
+    signal?.throwIfAborted()
     await rename(partial, file)
     return file
   } catch (error) {

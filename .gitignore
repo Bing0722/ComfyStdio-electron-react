@@ -17,4 +17,6 @@
 # Portable runtime and release archives
 /Data/
 /ComfyUI/
+/ComfyUI_windows_portable/
+/.comfy-portable-*/
 /release/

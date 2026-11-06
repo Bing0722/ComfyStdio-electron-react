@@ -16,8 +16,8 @@ export interface RuntimeSnapshot {
 }
 export interface RuntimeAPI {
   snapshot: () => Promise<RuntimeSnapshot>
-  start: (mode: RunMode) => Promise<void>
-  restart: (mode: RunMode) => Promise<void>
+  start: (mode: RunMode, portableCpu?: boolean) => Promise<void>
+  restart: (mode: RunMode, portableCpu?: boolean) => Promise<void>
   stop: () => Promise<void>
   choosePython: () => Promise<string | null>
   exportLogs: () => Promise<boolean>

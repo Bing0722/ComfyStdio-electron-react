@@ -5,6 +5,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import type { RunMode } from '../../../../shared/runtime-api'
 import type { Theme } from '../../state/types'
 
 export const themes: Theme[] = ['浅色', '深色', '跟随系统']
@@ -18,6 +19,10 @@ interface Preferences {
   theme: Theme
   setTheme: (theme: Theme) => void
   liquid: true
+  runMode: RunMode
+  setRunMode: (mode: RunMode) => void
+  portableCpu: boolean
+  setPortableCpu: (enabled: boolean) => void
   settings: Settings
   updateSettings: (value: Partial<Settings>) => void
 }
@@ -41,6 +46,12 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     const saved = read('theme', '跟随系统')
     return themes.find((theme) => theme === saved) ?? '跟随系统'
   })
+  const [runMode, setRunMode] = useState<RunMode>(() =>
+    read('runMode', '') === '打开网页' ? '打开网页' : 'API 服务',
+  )
+  const [portableCpu, setPortableCpu] = useState(
+    () => read('portableCpu', '') === 'true',
+  )
   const liquid = true as const
   const [settings, setSettings] = useState<Settings>({
     modelProxy: read('modelProxy', ''),
@@ -74,6 +85,16 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         theme,
         setTheme,
         liquid,
+        runMode,
+        setRunMode: (mode) => {
+          save('runMode', mode)
+          setRunMode(mode)
+        },
+        portableCpu,
+        setPortableCpu: (enabled) => {
+          save('portableCpu', String(enabled))
+          setPortableCpu(enabled)
+        },
         settings,
         updateSettings: (update) =>
           setSettings((current) => {

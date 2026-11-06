@@ -5,6 +5,7 @@ import type { WindowAPI, WindowState } from '../shared/window-api'
 
 const windowAPI: WindowAPI = {
   platform: process.platform,
+  arch: process.arch,
   setTheme: (dark) => ipcRenderer.send('window:theme', dark),
   minimize: () => ipcRenderer.send('window:minimize'),
   toggleMaximize: () => ipcRenderer.send('window:toggle-maximize'),
@@ -23,7 +24,7 @@ contextBridge.exposeInMainWorld('device', {
   read: () => ipcRenderer.invoke('device:read'),
 })
 const comfyAPI: ComfyAPI = {
-  acquire: (proxy) => ipcRenderer.invoke('comfy:acquire', proxy),
+  acquire: (kind, proxy) => ipcRenderer.invoke('comfy:acquire', kind, proxy),
   openFolder: (kind) => ipcRenderer.invoke('comfy:open-folder', kind),
   cancelAcquire: () => ipcRenderer.invoke('comfy:cancel-acquire'),
   chooseAndRead: () => ipcRenderer.invoke('comfy:choose-and-read'),
@@ -33,8 +34,8 @@ contextBridge.exposeInMainWorld('comfy', comfyAPI)
 
 const runtimeAPI: RuntimeAPI = {
   snapshot: () => ipcRenderer.invoke('runtime:snapshot'),
-  start: (mode) => ipcRenderer.invoke('runtime:start', mode),
-  restart: (mode) => ipcRenderer.invoke('runtime:restart', mode),
+  start: (mode, cpu) => ipcRenderer.invoke('runtime:start', mode, cpu),
+  restart: (mode, cpu) => ipcRenderer.invoke('runtime:restart', mode, cpu),
   stop: () => ipcRenderer.invoke('runtime:stop'),
   choosePython: () => ipcRenderer.invoke('runtime:choose-python'),
   exportLogs: () => ipcRenderer.invoke('runtime:export'),
