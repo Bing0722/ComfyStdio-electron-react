@@ -1,3 +1,4 @@
+import type { CatalogPlugin } from '../../../../shared/comfy-api'
 import { ViewTabs } from '../../components/ui/ViewTabs'
 import { PluginCatalog } from './PluginCatalog'
 import './plugins.css'
@@ -15,6 +16,16 @@ export function PluginsPage() {
     { showDialog, notify } = useFeedback()
   const { readComfy, readBlockedReason } = useWorkspace()
   const { settings } = usePreferences()
+  const [catalog, setCatalog] = useState<CatalogPlugin[]>([])
+  useEffect(() => {
+    let active = true
+    window.comfy?.pluginCatalog(false, settings.pluginProxy).then(items => { if (active) setCatalog(items) }).catch(() => {})
+    return () => { active = false }
+  }, [comfy.path, comfy.readAt])
+  const description = (name: string, fallback: string) => {
+    const item = catalog.find(item => item.url.split('/').at(-1)?.replace(/\.git$/, '').toLowerCase() === name.replace(/\.disabled$/, '').toLowerCase())
+    return item?.description || fallback.replace(/\s+/g, ' ').slice(0, 180)
+  }
   const [view, setView] = useState('已安装')
   const [updates, setUpdates] = useState<Record<string, string>>({})
   const [repository, setRepository] = useState('')
@@ -79,25 +90,20 @@ export function PluginsPage() {
       <PluginCatalog installing={installing} installProgress={installProgress} proxy={settings.pluginProxy} installed={Object.keys(comfy.plugins)} disabled={busy || !!readBlockedReason} install={url => void operate('install', url)} />
       </div>
       <div hidden={view !== '已安装'}>
-      <div className="toolbar plugin-local-search">
-        <SearchInput
-          label="搜索当前 ComfyUI 插件…"
-          value={filter.search}
-          onChange={(search) => setFilter({ search })}
-        />
-      </div>
-      <div className="toolbar"><Button disabled={busy || !!readBlockedReason || !Object.keys(comfy.plugins).length} onClick={() => void operate('check-all', '')}>检查全部更新</Button><Button className="button-primary" disabled={busy || !!readBlockedReason || !Object.keys(comfy.plugins).length} onClick={() => void operate('update-all', '')}>统一更新并安装依赖</Button><span role="status">{busy ? '正在处理，请查看运行日志…' : ''}</span></div>
-      <Section title="当前插件" count={plugins.length}>
+      <Section title="已安装插件" count={plugins.length} action={
+        <div className="plugin-batch-actions"><Button disabled={busy || !!readBlockedReason || !Object.keys(comfy.plugins).length} onClick={() => void operate('check-all', '')}>检查全部更新</Button><Button className="button-primary" disabled={busy || !!readBlockedReason || !Object.keys(comfy.plugins).length} onClick={() => void operate('update-all', '')}>更新并安装依赖</Button></div>
+      }>
+        <div className="plugin-installed-toolbar"><SearchInput label="搜索已安装插件…" value={filter.search} onChange={search => setFilter({ search })} /><span role="status">{busy ? '正在处理，请查看运行日志…' : '统一管理插件与依赖'}</span></div>
         {!plugins.length ? (
           <EmptyState
             title="没有匹配的插件"
             description={`读取位置：${comfy.pluginsPath}`}
           />
         ) : (
-          <div className="item-list">
+          <div className="plugin-catalog-grid">
             {plugins.map((plugin) => (
               <div
-                className="list-row wrap-row"
+                className="plugin-catalog-card plugin-installed-card"
                 key={plugin.path}
               >
                 <div className="row-content">
@@ -107,13 +113,13 @@ export function PluginsPage() {
                       <span className="disabled-badge">已禁用</span>
                     )}
                   </div>
-                  <p className="installed-plugin-summary">{plugin.description}</p>
+                  <p className="installed-plugin-summary">{description(plugin.name, plugin.description)}</p>
                   <div className="row-description">
                     版本 {plugin.version}
                     {updates[plugin.name] && <span> · {updates[plugin.name]}</span>}
                   </div>
                 </div>
-                <Button disabled={busy || !!readBlockedReason}
+                <div className="plugin-card-actions"><Button disabled={busy || !!readBlockedReason}
                   onClick={() => void operate('toggle', plugin.name)}>
                   {plugin.enabled ? '禁用' : '启用'}
                 </Button>
@@ -123,12 +129,12 @@ export function PluginsPage() {
                   onClick={() =>
                     showDialog({
                       title: plugin.name,
-                      text: `${plugin.description}\n\n位置：${plugin.path}\n版本：${plugin.version}\n实际节点加载结果以运行日志为准。`,
+                      text: `${description(plugin.name, plugin.description)}\n\n${plugin.description}\n\n位置：${plugin.path}\n版本：${plugin.version}\n实际节点加载结果以运行日志为准。`,
                     })
                   }
                 >
                   详情
-                </Button>
+                </Button></div>
               </div>
             ))}
           </div>
