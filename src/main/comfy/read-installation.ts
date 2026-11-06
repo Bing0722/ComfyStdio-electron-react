@@ -118,6 +118,7 @@ export async function readInstallation(
   try {
     const entries = await readdir(pluginsPath, { withFileTypes: true })
     for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      if (entry.name.replace(/\.disabled$/, '') === 'websocket_image_save.py') continue
       if (entry.name.startsWith('.') || entry.name === '__pycache__') continue
       const path = join(pluginsPath, entry.name)
       if (entry.isSymbolicLink()) {

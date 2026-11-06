@@ -57,6 +57,23 @@ export async function managePlugin(
   const info = await lstat(path)
   if (info.isSymbolicLink() || dirname(await realpath(path)) !== await realpath(directory))
     throw new Error('不支持修改目录外的插件。')
+  if (value.replace(/\.disabled$/, '') === 'websocket_image_save.py') throw new Error('这是 ComfyUI 内置文件，不作为插件管理。')
+  if (action === 'check-update') {
+    if (!info.isDirectory()) throw new Error('单文件插件不支持 Git 更新检查。')
+    const git = (args: string[]) => new Promise<string>((resolve, reject) => execFile('git', args, { cwd: path, windowsHide: true, timeout: 120000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }, (error, stdout, stderr) => error ? reject(new Error(stderr || error.message)) : resolve(stdout.trim())))
+    if (await realpath(await git(['rev-parse', '--show-toplevel'])) !== await realpath(path)) throw new Error('该插件没有独立 Git 仓库，无法检查更新。')
+    const branch = await git(['symbolic-ref', '--short', 'HEAD'])
+    if (!branch) throw new Error('插件处于固定提交，无法确定更新分支。')
+    const remote = await git(['config', `branch.${branch}.remote`])
+    const merge = await git(['config', `branch.${branch}.merge`])
+    const url = await git(['remote', 'get-url', remote])
+    if (!/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+$/.test(url) || !merge.startsWith('refs/heads/')) throw new Error('仅支持 GitHub HTTPS 跟踪分支的更新检查。')
+    await git([...(validated ? ['-c', `http.proxy=${validated}`] : []), 'fetch', '--no-tags', url, merge])
+    const [ahead, behind] = (await git(['rev-list', '--left-right', '--count', 'HEAD...FETCH_HEAD'])).split(/\s+/).map(Number)
+    const message = behind ? `有更新：落后 ${behind} 个提交${ahead ? `，本地另有 ${ahead} 个提交` : ''}` : '当前分支没有可用更新'
+    output(message)
+    return message
+  }
   if (action === 'delete') {
     if (!trash) throw new Error('回收站不可用')
     await trash(path)

@@ -49,7 +49,7 @@ export interface ComfyAPI {
   pluginCatalog: (refresh: boolean, proxy: string) => Promise<CatalogPlugin[]>
   versions: (action: 'status' | 'fetch' | 'switch', tag?: string, proxy?: string) => Promise<VersionStatus>
   onAcquisitionProgress: (callback: (progress: AcquisitionProgress) => void) => () => void
-  managePlugin: (action: 'install' | 'dependencies' | 'toggle' | 'delete', value: string, proxy: string) => Promise<void>
+  managePlugin: (action: 'install' | 'dependencies' | 'toggle' | 'delete' | 'check-update', value: string, proxy: string) => Promise<void | string>
   acquire: (kind: AcquisitionKind, proxy?: string) => Promise<ComfyReadResult>
   openFolder: (kind: 'program' | 'models' | 'plugins') => Promise<string>
   cancelAcquire: () => Promise<void>

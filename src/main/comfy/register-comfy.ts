@@ -250,7 +250,7 @@ export function registerComfyReader(portable: PortablePaths) {
     windowFor(event)
     if (busy || runtime.busy || !currentPath)
       throw new Error('请先读取 ComfyUI 并停止运行中的程序。')
-    if (!['install', 'dependencies', 'toggle', 'delete'].includes(action) ||
+    if (!['install', 'dependencies', 'toggle', 'delete', 'check-update'].includes(action) ||
         typeof value !== 'string' || typeof proxy !== 'string')
       throw new Error('插件操作参数无效。')
     busy = true
@@ -262,11 +262,12 @@ export function registerComfyReader(portable: PortablePaths) {
     app.on('before-quit', deferQuit)
     try {
       runtime.operationLog(`插件操作开始：${action} ${value}`)
-      await managePlugin(currentPath, runtime.selectedPython(currentPath), action, value, proxy, text => {
+      const result = await managePlugin(currentPath, runtime.selectedPython(currentPath), action, value, proxy, text => {
         runtime.pluginLog(text)
         if (action === 'install' && !event.sender.isDestroyed()) event.sender.send('comfy:plugin-progress', { url: value, message: text.slice(-2000) })
       }, path => shell.trashItem(path))
       runtime.operationLog(`插件操作完成：${action} ${value}`)
+      return result
     } catch (error) {
       runtime.operationLog(`插件操作失败：${action} ${value} · ${error instanceof Error ? error.message : String(error)}`)
       throw error

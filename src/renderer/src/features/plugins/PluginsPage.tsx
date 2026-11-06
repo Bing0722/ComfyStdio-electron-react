@@ -1,3 +1,4 @@
+import { ViewTabs } from '../../components/ui/ViewTabs'
 import { PluginCatalog } from './PluginCatalog'
 import './plugins.css'
 import { useEffect, useState } from 'react'
@@ -14,6 +15,8 @@ export function PluginsPage() {
     { showDialog, notify } = useFeedback()
   const { readComfy, readBlockedReason } = useWorkspace()
   const { settings } = usePreferences()
+  const [view, setView] = useState('已安装')
+  const [updates, setUpdates] = useState<Record<string, string>>({})
   const [repository, setRepository] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -22,13 +25,19 @@ export function PluginsPage() {
   useEffect(() => window.comfy?.onPluginProgress(value => {
     if (value.url === installing) setInstallProgress(value.message.trim().split(/[\r\n]/).filter(Boolean).at(-1) || '正在下载…')
   }), [installing])
-  async function operate(action: 'install' | 'dependencies' | 'toggle' | 'delete', value: string) {
+  async function operate(action: 'install' | 'dependencies' | 'toggle' | 'delete' | 'check-update', value: string) {
     if (busy) return
     setBusy(true)
     if (action === 'install') { setInstalling(value); setInstallProgress('准备下载…') }
     setError('')
     try {
-      await window.comfy!.managePlugin(action, value, settings.pluginProxy)
+      const result = await window.comfy!.managePlugin(action, value, settings.pluginProxy)
+      if (action === 'check-update') {
+        const message = result || '检查完成'
+        setUpdates(current => ({ ...current, [value]: message }))
+        notify(message)
+        return
+      }
       if (action === 'install') setInstallProgress('正在刷新插件列表…')
       await readComfy('refresh')
       notify(action === 'delete' ? '插件已移入回收站，可重新安装。' : action === 'install' ? '插件文件安装成功，请按需安装依赖后启动 ComfyUI。' : '插件操作完成，下次启动生效。')
@@ -46,6 +55,9 @@ export function PluginsPage() {
   return (
     <>
       <ComfyContext />
+      <ViewTabs label="插件页面" value={view} options={['已安装', '发现插件'].map(value => ({ value, label: value }))} onChange={setView} />
+      {error && <p role="alert" className="error-text">{error}</p>}
+      <div hidden={view !== '发现插件'}>
       <Section title="安装插件">
         <div className="plugin-install-row"><input aria-label="插件仓库地址" value={repository}
           placeholder="https://github.com/作者/插件.git"
@@ -57,6 +69,8 @@ export function PluginsPage() {
         {error && <pre className="log-output" role="alert">{error}</pre>}
       </Section>
       <PluginCatalog installing={installing} installProgress={installProgress} proxy={settings.pluginProxy} installed={Object.keys(comfy.plugins)} disabled={busy || !!readBlockedReason} install={url => void operate('install', url)} />
+      </div>
+      <div hidden={view !== '已安装'}>
       <div className="toolbar plugin-local-search">
         <SearchInput
           label="搜索当前 ComfyUI 插件…"
@@ -86,8 +100,10 @@ export function PluginsPage() {
                   </div>
                   <div className="row-description">
                     版本 {plugin.version}
+                    {updates[plugin.name] && <span> · {updates[plugin.name]}</span>}
                   </div>
                 </div>
+                <Button disabled={busy || !!readBlockedReason} onClick={() => void operate('check-update', plugin.name)}>检查更新</Button>
                 <Button disabled={busy || !!readBlockedReason}
                   onClick={() => void operate('dependencies', plugin.name)}>安装依赖</Button>
                 <Button disabled={busy || !!readBlockedReason}
@@ -111,6 +127,7 @@ export function PluginsPage() {
           </div>
         )}
       </Section>
+      </div>
       <p className="footnote">
         插件属于当前 ComfyUI。修改插件前请停止 ComfyUI，修改完成后重新启动生效。
       </p>
