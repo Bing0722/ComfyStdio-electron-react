@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('device', {
   read: () => ipcRenderer.invoke('device:read'),
 })
 const comfyAPI: ComfyAPI = {
+  pluginCatalog: (refresh, proxy) => ipcRenderer.invoke('comfy:catalog', refresh, proxy),
   versions: (action, tag, proxy) => ipcRenderer.invoke('comfy:versions', action, tag, proxy),
   onAcquisitionProgress: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, progress: Parameters<typeof callback>[0]) => callback(progress)

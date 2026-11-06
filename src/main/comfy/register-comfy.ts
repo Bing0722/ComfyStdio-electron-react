@@ -1,3 +1,4 @@
+import { parseCatalog } from './catalog'
 import { manageVersions } from './versions'
 import type { PortablePaths } from '../portable/paths'
 import { readCurrentPath, saveCurrentPath } from '../portable/state'
@@ -22,6 +23,24 @@ import { readInstallation } from './read-installation'
 import type { AcquisitionProgress, ComfyReadResult } from '../../shared/comfy-api'
 
 export function registerComfyReader(portable: PortablePaths) {
+  let catalogRequest: Promise<ReturnType<typeof parseCatalog>> | undefined
+  let catalogSettled = false
+  ipcMain.handle('comfy:catalog', async (event, refresh, proxy) => {
+    windowFor(event)
+    if (typeof refresh !== 'boolean') throw new Error('参数无效')
+    const validated = validateProxy(proxy)
+    if (!catalogRequest || refresh && catalogSettled) {
+      catalogSettled = false
+      catalogRequest = (async () => {
+        const connection = session.fromPartition('plugin-catalog', { cache: false })
+        await connection.setProxy(validated ? { mode: 'fixed_servers', proxyRules: validated.replace(/^socks5h:/i, 'socks5:') } : { mode: 'system' })
+        const response = await connection.fetch('https://raw.githubusercontent.com/Comfy-Org/ComfyUI-Manager/main/custom-node-list.json', { signal: AbortSignal.timeout(30000), credentials: 'omit' })
+        if (!response.ok) throw new Error(`目录获取失败：HTTP ${response.status}`)
+        return parseCatalog(await response.json())
+      })().finally(() => { catalogSettled = true })
+    }
+    return catalogRequest
+  })
   const saved = readCurrentPath(portable)
   let currentPath: string | null = existsSync(saved) ? saved : null
   let busy = false

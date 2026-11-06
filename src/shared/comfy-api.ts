@@ -39,7 +39,9 @@ export interface AcquisitionProgress {
   total?: number
 }
 export interface VersionStatus { commit: string; branch: string; tag: string; dirty: boolean; tags: string[] }
+export interface CatalogPlugin { title: string; author: string; description: string; url: string }
 export interface ComfyAPI {
+  pluginCatalog: (refresh: boolean, proxy: string) => Promise<CatalogPlugin[]>
   versions: (action: 'status' | 'fetch' | 'switch', tag?: string, proxy?: string) => Promise<VersionStatus>
   onAcquisitionProgress: (callback: (progress: AcquisitionProgress) => void) => () => void
   managePlugin: (action: 'install' | 'dependencies' | 'toggle', value: string, proxy: string) => Promise<void>

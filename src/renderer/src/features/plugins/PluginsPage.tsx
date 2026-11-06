@@ -1,3 +1,5 @@
+import { PluginCatalog } from './PluginCatalog'
+import './plugins.css'
 import { useState } from 'react'
 import { usePreferences } from '../settings/PreferencesProvider'
 import { Button } from '../../components/ui/Button'
@@ -36,16 +38,17 @@ export function PluginsPage() {
     <>
       <ComfyContext />
       <Section title="安装插件">
-        <input aria-label="插件仓库地址" value={repository}
+        <div className="plugin-install-row"><input aria-label="插件仓库地址" value={repository}
           placeholder="https://github.com/作者/插件.git"
           onChange={(event) => setRepository(event.target.value)} />
         <Button disabled={busy || !!readBlockedReason || !repository.trim()}
-          onClick={() => void operate('install', repository.trim())}>安装插件</Button>
+          onClick={() => void operate('install', repository.trim())}>安装插件</Button></div>
         <p className="footnote">安装后点击插件的“安装依赖”，然后到启动页启动或重启 ComfyUI。依赖安装会执行插件提供的安装代码，请仅安装信任的插件。</p>
         <p role="status" style={{ visibility: busy ? 'visible' : 'hidden' }}>正在处理插件，详细输出可在运行日志查看…</p>
         {error && <pre className="log-output" role="alert">{error}</pre>}
       </Section>
-      <div className="toolbar">
+      <PluginCatalog proxy={settings.pluginProxy} installed={Object.keys(comfy.plugins)} disabled={busy || !!readBlockedReason} install={url => void operate('install', url)} />
+      <div className="toolbar plugin-local-search">
         <SearchInput
           label="搜索当前 ComfyUI 插件…"
           value={filter.search}
