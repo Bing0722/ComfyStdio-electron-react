@@ -1,0 +1,14 @@
+.software-update-entry { display: inline-flex; }
+.software-update-entry button { gap: 6px; }
+.software-update-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--danger); flex-shrink: 0; }
+.software-update-dialog { width: 520px; max-height: calc(100dvh - 64px); overflow-y: auto; }
+.software-update-heading { display: flex; align-items: center; gap: 14px; }
+.software-update-heading h2 { margin: 0; }
+.software-update-heading p, .software-update-summary p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+.software-update-icon { display: grid; place-items: center; padding: 14px; border-radius: 16px; background: var(--subtle); }
+.software-update-summary { margin: 22px 0; padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--subtle); font-size: 14px; }
+.software-update-notes { max-height: 220px; overflow: auto; }
+.software-update-notes h3 { font-size: 13px; }
+.software-update-notes p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.7; }
+.software-update-hint { color: var(--muted); font-size: 12px; line-height: 1.7; margin: 20px 0; }
+.software-update-dialog .dialog-actions { flex-wrap: wrap; }

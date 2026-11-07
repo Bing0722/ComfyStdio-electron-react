@@ -1,3 +1,4 @@
+import { SoftwareUpdate } from '../../features/about/SoftwareUpdate'
 import { useWorkspace } from '../../state/WorkspaceProvider'
 import { useEffect, useState } from 'react'
 import type { WindowState } from '../../../../shared/window-api'
@@ -46,7 +47,7 @@ export function TitleBar({
         <span className="environment-label">
           {workspace.comfy ? '本地 ComfyUI' : '未读取程序'}
         </span>
-
+        <SoftwareUpdate startup />
         <Button
           className="titlebar-button"
           aria-label="打开设置"
