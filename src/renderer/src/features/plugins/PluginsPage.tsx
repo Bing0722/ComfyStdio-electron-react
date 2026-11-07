@@ -1,3 +1,4 @@
+import { pluginResult } from './plugin-result'
 import { usePluginState, pluginState } from './plugin-state'
 import type { CatalogPlugin } from '../../../../shared/comfy-api'
 import { ViewTabs } from '../../components/ui/ViewTabs'
@@ -31,7 +32,7 @@ export function PluginsPage() {
   const [updates, setUpdates] = usePluginState('updates')
   const [repository, setRepository] = usePluginState('repository')
   const [busy, setBusy] = usePluginState('busy')
-  const [error, setError] = usePluginState('error')
+  const [, setError] = usePluginState('error')
   const [installing, setInstalling] = usePluginState('installing')
   const [installProgress, setInstallProgress] = usePluginState('installProgress')
   async function operate(action: 'install' | 'dependencies' | 'toggle' | 'delete' | 'check-update' | 'check-all' | 'update-all', value: string) {
@@ -61,7 +62,7 @@ export function PluginsPage() {
       notify(action === 'delete' ? '插件已移入回收站，可重新安装。' : action === 'install' ? '插件文件安装成功，可在已安装页统一更新并安装依赖。' : '插件操作完成，下次启动生效。')
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error))
-      notify(`插件操作失败：${error instanceof Error ? error.message : String(error)}`)
+      notify('插件操作失败，请在运行日志中查看原因。')
     } finally {
       setBusy(false)
       setInstalling('')
@@ -74,7 +75,6 @@ export function PluginsPage() {
     <>
       <ComfyContext />
       <ViewTabs label="插件页面" value={view} options={['已安装', '发现插件'].map(value => ({ value, label: value }))} onChange={setView} />
-      {error && <p role="alert" className="error-text">{error}</p>}
       <div hidden={view !== '发现插件'}>
       <Section title="安装插件">
         <div className="plugin-install-row"><input aria-label="插件仓库地址" value={repository}
@@ -82,9 +82,8 @@ export function PluginsPage() {
           onChange={(event) => setRepository(event.target.value)} />
         <Button disabled={busy || !!readBlockedReason || !repository.trim()}
           onClick={() => void operate('install', repository.trim())}>安装插件</Button></div>
-        <p className="footnote">安装后点击插件的“安装依赖”，然后到启动页启动或重启 ComfyUI。依赖安装会执行插件提供的安装代码，请仅安装信任的插件。</p>
+        <p className="footnote">安装后可在已安装页统一更新并安装依赖，然后启动或重启 ComfyUI。依赖安装会执行插件提供的安装代码，请仅安装信任的插件。</p>
         <p role="status" style={{ visibility: busy ? 'visible' : 'hidden' }}>正在处理插件，详细输出可在运行日志查看…</p>
-        {error && <pre className="log-output" role="alert">{error}</pre>}
       </Section>
       <PluginCatalog installing={installing} installProgress={installProgress} proxy={settings.pluginProxy} installed={Object.keys(comfy.plugins)} disabled={busy || !!readBlockedReason} install={url => void operate('install', url)} />
       </div>
@@ -113,7 +112,7 @@ export function PluginsPage() {
                   <p className="installed-plugin-summary">{description(plugin.name, plugin.description)}</p>
                   <div className="row-description">
                     版本 {plugin.version}
-                    {updates[plugin.name] && <span> · {updates[plugin.name]}</span>}
+                    <span className="plugin-operation-result">{pluginResult(updates[plugin.name] || '')}</span>
                   </div>
                 </div>
                 <div className="plugin-card-actions"><Button disabled={busy || !!readBlockedReason}

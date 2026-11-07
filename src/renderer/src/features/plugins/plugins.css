@@ -38,3 +38,5 @@
 .plugin-installed-card .row-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; }
 .plugin-installed-card .disabled-badge { flex-shrink: 0; }
 .plugin-card-actions > button { min-width: 56px; }
+
+.plugin-operation-result { display: block; height: 22px; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
